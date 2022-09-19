@@ -8,9 +8,9 @@ from scipy.integrate import quad
 # number of non-constant eigenform pairs
 L = 10    
 
-I = 25
+I = 10
 J = 10
-K = 2
+K = 5
 
                   
 # Data points and corresponding vector field on the unit circle
@@ -212,7 +212,7 @@ for i in range(0, 2*I+1):
 # print(c[2,:,:])
 # print(np.isnan(c).any())
 # print(np.isinf(c).any())
-#%%
+
 
 # Compute g_kij Riemannian metric coefficients
 g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
@@ -232,27 +232,22 @@ G = np.einsum('mik, mjl->ijkl', c, g, dtype = float)
 G = G[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
 G = np.reshape(G, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
-for i in range(0, (2*J+1)*(2*K+1)):
-    for j in range(0, (2*J+1)*(2*K+1)):
-        if G[i,j] < 10**(-8):
-            G[i,j] = 0
-
 G_dual = np.linalg.pinv(G)
 # G_dual = np.reshape(G_dual, (21, 7, 21, 7))
 
-# print(G_dual[1,:])
+# print(G[2,:])
 # print(np.isnan(G).any())
 # print(np.isinf(G).any())
 # print(G_dual[0,0,0,:])
 # %%
-
 
 # Apply dual Gram operator G^+ to obtain v_hat 
 v_hat = np.matmul(G_dual, v_hat_prime)
 v_hat = np.reshape(v_hat, (2*J+1, 2*K+1))
 
 # v_hat = np.einsum('ijkl, kl->ij', G_dual, v_hat_prime, dtype = float)
-
+# print(v_hat[1,:])
+# %%
 
 # Components of embedding F into R^2
 F_1 = np.array([0, 1/np.sqrt(2)])
@@ -301,6 +296,22 @@ for i in range(0, 10):
 # print(w_phi_theta_y[1,:])
 print(-W_theta_x)
 print(-W_theta_y)
+
+
+# Plot the interpolated vector field
+X, Y, U, V = zip(*vector_approx)
+
+plt.figure()
+ax = plt.gca()
+ax.quiver(X, Y, U, V, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
+ax.set_xlim([-5,5])
+ax.set_ylim([-5,5])
+
+t = np.linspace(0, 2*np.pi, 100000)
+ax.plot(np.cos(t), np.sin(t), linewidth = 2.5, color = 'blue')
+
+plt.draw()
+plt.show()
 # %%
 
 

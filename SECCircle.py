@@ -8,9 +8,9 @@ from scipy.integrate import quad
 # number of non-constant eigenform pairs
 L = 10    
 
-I = 10
+I = 25
 J = 10
-K = 5
+K = 25
 
                   
 # Data points and corresponding vector field on the unit circle
@@ -256,11 +256,11 @@ F_2 = np.array([1/np.sqrt(2), 0])
 g_1 = g[:2*K+1, 1, :]
 g_2 = g[:2*K+1, 2, :]
 
-w_m = np.empty([2*I+1, 2], dtype = float)
-F_1_coeff = np.empty(2*I+1, dtype = float)
-F_2_coeff = np.empty(2*I+1, dtype = float)
+w_m = np.empty([2*K+1, 2], dtype = float)
+F_1_coeff = np.empty(2*K+1, dtype = float)
+F_2_coeff = np.empty(2*K+1, dtype = float)
 
-for m in range(0, 2*I+1):
+for m in range(0, 2*K+1):
     c_m = c[:2*J+1, :, m]
     F_1_coeff[m] = np.einsum('ij, jl, il ->', v_hat, g_1, c_m, dtype = float)
     F_2_coeff[m] = np.einsum('ij, jl, il ->', v_hat, g_2, c_m, dtype = float)
@@ -270,11 +270,11 @@ W_theta_x = np.empty(10, dtype = float)
 W_theta_y = np.empty(10, dtype = float)
 vector_approx = np.empty([10, 4], dtype = float)
 
-w_phi_theta_x = np.empty([10, 2*I+1], dtype = float)
-w_phi_theta_y = np.empty([10, 2*I+1], dtype = float)
+w_phi_theta_x = np.empty([10, 2*K+1], dtype = float)
+w_phi_theta_y = np.empty([10, 2*K+1], dtype = float)
 
 for i in range(0, 10):
-        for m in range(0, 2*I+1):
+        for m in range(0, 2*K+1):
             if m == 0:
                 w_phi_theta_x[i,m] = w_m[0,0]
                 w_phi_theta_y[i,m] = w_m[0,1]
@@ -341,11 +341,11 @@ print(v)
 #%%
 
 # Apply pushforward map of the embedding F into the data space
-w_m = np.empty([2*K+1, 2], dtype = float)
-F_1_coeff = np.empty(2*K+1, dtype = float)
-F_2_coeff = np.empty(2*K+1, dtype = float)
+w_m = np.empty([2*I+1, 2], dtype = float)
+F_1_coeff = np.empty(2*I+1, dtype = float)
+F_2_coeff = np.empty(2*I+1, dtype = float)
 
-for m in range(0, 2*K+1):
+for m in range(0, 2*I+1):
     i_sum_1 = 0
     i_sum_2 = 0
     for i in range(0, 2*J+1):
@@ -354,7 +354,7 @@ for m in range(0, 2*K+1):
         for j in range(0, 2*K+1):
             l_sum_1 = 0
             l_sum_2 = 0
-            for l in range(0, 2*K+1):
+            for l in range(0, 2*I+1):
                 l_sum_1 += g[j,1,l]*c[i,l,m]
                 l_sum_2 += g[j,2,l]*c[i,l,m]
             j_sum_1 += v_hat[i,j] * l_sum_1
@@ -371,11 +371,11 @@ W_theta_x = np.empty(10, dtype = float)
 W_theta_y = np.empty(10, dtype = float)
 vector_approx = np.empty([10, 4], dtype = float)
 
-w_phi_theta_x = np.empty([10, 2*K+1], dtype = float)
-w_phi_theta_y = np.empty([10, 2*K+1], dtype = float)
+w_phi_theta_x = np.empty([10, 2*I+1], dtype = float)
+w_phi_theta_y = np.empty([10, 2*I+1], dtype = float)
 
 for i in range(0, 10):
-        for m in range(0, 2*K+1):
+        for m in range(0, 2*I+1):
             if m == 0:
                 w_phi_theta_x[i,m] = w_m[0,0]
                 w_phi_theta_y[i,m] = w_m[0,1]

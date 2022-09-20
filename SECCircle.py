@@ -8,9 +8,9 @@ from scipy.integrate import quad
 # number of non-constant eigenform pairs
 L = 10    
 
-I = 25
+I = 10
 J = 10
-K = 25
+K = 3
 
                   
 # Data points and corresponding vector field on the unit circle
@@ -227,8 +227,9 @@ for i in range(0, 2*I+1):
 
 
 # Compute G_ijkl entries for the Gram operator and its dual
-G = np.empty([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
+G = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
 G = np.einsum('mik, mjl->ijkl', c, g, dtype = float)
+
 G = G[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
 G = np.reshape(G, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
@@ -247,7 +248,127 @@ v_hat = np.reshape(v_hat, (2*J+1, 2*K+1))
 
 # v_hat = np.einsum('ijkl, kl->ij', G_dual, v_hat_prime, dtype = float)
 # print(v_hat[1,:])
+
+
+F_k = np.zeros([2, 2*I+1], dtype = float)
+F_k[1, 1] = 1/np.sqrt(2)
+F_k[0, 2] = 1/np.sqrt(2)
+
+g = g[:(2*K+1), :, :]
+# h_ajl = np.einsum('ak, jkl -> ajl', F_k, g, dtype = float)
+
+h_ajl = np.zeros([2, 2*K+1, 2*I+1], dtype = float)
+for a in range(0, 1):
+    for j in range(0, 2*K+1):
+        for l in range(0, 2*I+1):
+            for k in range(0, 2*I+1):
+                h_ajl[a, j, l] += F_k[a, k]*g[j,k,l]
+
+c = c[:(2*J+1), :, :]
+# d_jlm = np.einsum('ij, ilm -> jlm', v_hat, c, dtype = float)
+
+d_jlm = np.zeros([2*K+1, 2*I+1, 2*I+1], dtype = float)
+for j in range(0, 2*K+1):
+    for l in range(0, 2*I+1):
+        for m in range(0, 2*I+1):
+            for i in range(0, 2*J+1):
+                d_jlm[j, l, m] += v_hat[i, j]*c[i, l, m]
+
+
+# p_am = np.einsum('ajl, jlm -> am', h_ajl, d_jlm, dtype = float)
+
+p_am = np.zeros([2, 2*I+1], dtype = float)
+p_ajm = np.zeros([2, 2*K+1, 2*I+1], dtype = float)
+for a in range(0, 1):
+    for m in range(0, 2*I+1):
+        for j in range(0, 2*K+1):
+            for l in range(0, 2*I+1):
+                p_ajm[a, j, m] += h_ajl[a, j, l]*d_jlm[j, l, m]
+            p_am[a,m] += p_ajm[a, j, m]
+
+print(p_am.shape)
 # %%
+
+W_theta_x = np.zeros(10, dtype = float)
+W_theta_y = np.zeros(10, dtype = float)
+vector_approx = np.empty([10, 4], dtype = float)
+
+for i in range(0, 10):
+    for m in range(0, 2*I+1):
+        if m == 0:
+            W_theta_x[i] += p_am[1, m]
+            W_theta_y[i] += p_am[0, m]
+        elif (m % 2) == 0 and m != 0:
+            W_theta_x[i] += p_am[1, m]*phi_even(m, THETA_LST[i])
+            W_theta_y[i] += p_am[0, m]*phi_even(m, THETA_LST[i])
+        else:
+            W_theta_x[i] += p_am[1, m]*phi_odd(m, THETA_LST[i])
+            W_theta_y[i] += p_am[0, m]*phi_odd(m, THETA_LST[i])
+
+            vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x[i], W_theta_y[i]])
+
+print(W_theta_x)
+print(W_theta_y)
+
+X, Y, U, V = zip(*vector_approx)
+
+plt.figure()
+ax = plt.gca()
+ax.quiver(X, Y, U, V, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
+ax.set_xlim([-5,5])
+ax.set_ylim([-5,5])
+
+t = np.linspace(0, 2*np.pi, 100000)
+ax.plot(np.cos(t), np.sin(t), linewidth = 2.5, color = 'blue')
+
+plt.draw()
+plt.show()
+# %%
+
+
+v_tilde_x = np.zeros(10, dtype = float)
+v_tilde_y = np.zeros(10, dtype = float)
+vector_approx = np.empty([10, 4], dtype = float)
+
+for m in range(0, 10):
+    for i in range(0, 2*J+1):
+        for j in range(0, 2*K+1):
+            if i == 0:
+                if j == 0:
+                    v_tilde_x[m] += 0
+                    v_tilde_y[m] += 0
+                elif (j % 2) == 0 and j != 0:
+                    v_tilde_x[m] += v_hat[i,j]*dphi_even(j, TRAIN_X[m])
+                    v_tilde_y[m] += v_hat[i,j]*dphi_even(j, TRAIN_Y[m])
+                else:
+                    v_tilde_x[m] += v_hat[i,j]*dphi_odd(j, TRAIN_X[m])
+                    v_tilde_y[m] += v_hat[i,j]*dphi_odd(j, TRAIN_Y[m])
+            elif (i % 2) == 0 and i != 0:
+                if j == 0:
+                        v_tilde_x[m] += 0
+                        v_tilde_y[m] += 0
+                elif (j % 2) == 0 and j != 0:
+                    v_tilde_x[m] += v_hat[i,j]*phi_even(i, TRAIN_X[m])*dphi_even(j, TRAIN_X[m])
+                    v_tilde_y[m] += v_hat[i,j]*phi_even(i, TRAIN_Y[m])*dphi_even(j, TRAIN_Y[m])
+                else:
+                    v_tilde_x[m] += v_hat[i,j]*phi_even(i, TRAIN_X[m])*dphi_odd(j, TRAIN_X[m])
+                    v_tilde_y[m] += v_hat[i,j]*phi_even(i, TRAIN_Y[m])*dphi_odd(j, TRAIN_Y[m])
+            else:
+                if j == 0:
+                        v_tilde_x[m] += 0
+                        v_tilde_y[m] += 0
+                elif (j % 2) == 0 and j != 0:
+                    v_tilde_x[m] += v_hat[i,j]*phi_odd(i, TRAIN_X[m])*dphi_even(j, TRAIN_X[m])
+                    v_tilde_y[m] += v_hat[i,j]*phi_odd(i, TRAIN_Y[m])*dphi_even(j, TRAIN_Y[m])
+                else:
+                    v_tilde_x[m] += v_hat[i,j]*phi_odd(i, TRAIN_X[m])*dphi_odd(j, TRAIN_X[m])
+                    v_tilde_y[m] += v_hat[i,j]*phi_odd(i, TRAIN_Y[m])*dphi_odd(j, TRAIN_Y[m])
+
+    vector_approx[m, :] = np.array([TRAIN_X[m], TRAIN_Y[m], v_tilde_x[m], v_tilde_y[m]])                
+
+print(v_tilde_x)
+print(v_tilde_y)
+
 
 # Components of embedding F into R^2
 F_1 = np.array([0, 1/np.sqrt(2)])
@@ -397,6 +518,7 @@ for i in range(0, 10):
 # print(w_phi_theta_y[1,:])
 print(-W_theta_x)
 print(-W_theta_y)
+# %%
 
 # print(vector_approx[1, :])
 

@@ -240,7 +240,7 @@ for j in range(0, 2*I+1):
 
 # Compute G_ijkl entries for the Gram operator and its dual
 G = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
-G = np.einsum('mik, mjl->ijkl', c, g, dtype = float)
+G = np.einsum('ikm, jlm->ijkl', c, g, dtype = float)
 
 G = G[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
 G = np.reshape(G, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
@@ -298,7 +298,7 @@ for a in range(0, 1):
                 p_ajm[a, j, m] += h_ajl[a, j, l]*d_jlm[j, l, m]
             p_am[a,m] += p_ajm[a, j, m]
 
-print(p_am.shape)
+# print(p_am.shape)
 # %%
 
 W_theta_x = np.zeros(10, dtype = float)
@@ -319,8 +319,8 @@ for i in range(0, 10):
 
             vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x[i], W_theta_y[i]])
 
-print(W_theta_x)
-print(W_theta_y)
+# print(W_theta_x)
+# print(W_theta_y)
 
 X, Y, U, V = zip(*vector_approx)
 
@@ -378,8 +378,8 @@ for m in range(0, 10):
 
     vector_approx[m, :] = np.array([TRAIN_X[m], TRAIN_Y[m], v_tilde_x[m], v_tilde_y[m]])                
 
-print(v_tilde_x)
-print(v_tilde_y)
+# print(v_tilde_x)
+# print(v_tilde_y)
 
 
 # Components of embedding F into R^2
@@ -427,8 +427,8 @@ for i in range(0, 10):
         
 # print(w_phi_theta_x[0,:])
 # print(w_phi_theta_y[1,:])
-print(-W_theta_x)
-print(-W_theta_y)
+print(W_theta_x)
+print(W_theta_y)
 
 
 # Plot the interpolated vector field
@@ -470,7 +470,7 @@ for j in range(0, 2*J+1):
         else:
             v += v_hat[j,k]*phi_odd(j,0)*dphi_odd(k,0)
        
-print(v)      
+# print(v)      
 #%%
 
 # Apply pushforward map of the embedding F into the data space

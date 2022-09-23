@@ -226,6 +226,18 @@ for i in range(0, 2*I+1):
 # print(np.isinf(g).any())
 
 
+c_new = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+for j in range(0, 2*I+1):
+    for l in range(0, 2*I+1):
+        for m in range(0, 2*I+1):
+            c_new[j,l,m] = (1/2)*(lamb[j] + lamb[l] - lamb[m])*c[j,l,m]
+
+            
+# G_new = np.einsum('ikm, jlm -> ijkl', c, c_new, dtype = float)
+# G_new = G_new[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
+# G_new = np.reshape(G_new, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+
+
 # Compute G_ijkl entries for the Gram operator and its dual
 G = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
 G = np.einsum('mik, mjl->ijkl', c, g, dtype = float)

@@ -26,10 +26,10 @@ for i in range(0, 10):
 
 
 # Plot the unit circle and the (training) vector field
-X, Y, U, V = zip(*TRAIN_V)
+X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
 plt.figure()
 ax = plt.gca()
-ax.quiver(X, Y, U, V, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
+ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
 ax.set_xlim([-5,5])
 ax.set_ylim([-5,5])
 
@@ -39,8 +39,8 @@ ax.plot(np.cos(t), np.sin(t), linewidth = 2.5, color = 'blue')
 # plt.draw()
 # plt.show()
 
-print(U)
-print(V)
+print(U_1)
+print(V_1)
 
 
 # Eigenvalues lambda_i
@@ -535,11 +535,12 @@ print(-W_theta_y)
 # print(vector_approx[1, :])
 
 # Plot the interpolated vector field
-X, Y, U, V = zip(*vector_approx)
+X_2, Y_2, U_2, V_2 = zip(*vector_approx)
 
 plt.figure()
 ax = plt.gca()
-ax.quiver(X, Y, U, V, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
+ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'black')
+ax.quiver(X_2, Y_2, U_2, V_2, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
 ax.set_xlim([-5,5])
 ax.set_ylim([-5,5])
 
@@ -549,4 +550,13 @@ ax.plot(np.cos(t), np.sin(t), linewidth = 2.5, color = 'blue')
 plt.draw()
 plt.show()
 
+
+plt.scatter(THETA_LST, -TRAIN_Y, color = 'black')
+plt.scatter(THETA_LST, W_theta_x, color = 'red')
+plt.show()
+
+
+plt.scatter(THETA_LST, TRAIN_X, color = 'black')
+plt.scatter(THETA_LST, W_theta_y, color = 'red')
+plt.show()
 # %%

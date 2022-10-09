@@ -3,7 +3,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import quad
-from scipy import random
 
 
 # number of non-constant eigenform pairs
@@ -13,13 +12,24 @@ L = 10
 I = 10
 J = 10
 K = 3
+   
 
-# Number of subdivisions in Monte Carlo integration 
-N = 20000
-       
-# Limits of Monte Carlo integration
-a = 0
-b = 2*np.pi    
+# Monte Carlo integration (with forced uniform sampling)
+def monte_carlo_uniform(func, a = 0, b = 2*np.pi, N = 1000):
+    subsets = np.arange(0, N+1, N/10)
+    steps = N/10
+    u = np.zeros(N)
+    for i in range(10):
+        start = int(subsets[i])
+        end = int(subsets[i+1])
+        u[start:end] = np.random.uniform(low = i/10, high = (i+1)/10, size = end - start)
+    np.random.shuffle(u)
+    
+    u_func = func(a+(b-a)*u)
+    s = ((b-a)/N)*u_func.sum()
+    
+    return s
+
                   
 # Data points and corresponding vector field on the unit circle
 THETA_LST = list(np.arange(0, 2*np.pi, np.pi/5))
@@ -120,84 +130,31 @@ for i in range(0, 2*J+1):
                 v_hat_prime_mc[i,j] = 0
             elif (j % 2) == 0 and j != 0:
                 inner_prod = lambda x: (1/(2*np.pi))*dphi_even(j,x)
-                
-                ar = np.zeros(N)
-                for k in range(0, N):
-                    ar[k] = random.uniform(a, b)
-                
-                integral = 0
-                for x_n in ar:
-                    integral += inner_prod(x_n)
-                    
-                v_hat_prime_mc[i,j] = ((b-a)/N)*integral
+                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod, a = 0, b = 2*np.pi, N = 100000)
             else:
                 inner_prod = lambda x: (1/(2*np.pi))*dphi_odd(j,x)
-
-                ar = np.zeros(N)
-                for k in range(0, N):
-                    ar[k] = random.uniform(a, b)
-                
-                integral = 0
-                for x_n in ar:
-                    integral += inner_prod(x_n)
-                    
-                v_hat_prime_mc[i,j] = ((b-a)/N)*integral    
+                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod, a = 0, b = 2*np.pi, N = 100000)
     elif (i % 2) == 0 and i != 0:
         for j in range(0, 2*K+1):
             if j == 0:
                 v_hat_prime_mc[i,j] = 0
             elif (j % 2) == 0 and j != 0:
                 inner_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*dphi_even(j,x)
-                
-                ar = np.zeros(N)
-                for k in range(0, N):
-                    ar[k] = random.uniform(a, b)
-                
-                integral = 0
-                for x_n in ar:
-                    integral += inner_prod(x_n)
-                    
-                v_hat_prime_mc[i,j] = ((b-a)/N)*integral
+                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod, a = 0, b = 2*np.pi, N = 100000)
             else:
                 inner_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*dphi_odd(j,x)
-
-                ar = np.zeros(N)
-                for k in range(0, N):
-                    ar[k] = random.uniform(a, b)
-                
-                integral = 0
-                for x_n in ar:
-                    integral += inner_prod(x_n)
-                    
-                v_hat_prime_mc[i,j] = ((b-a)/N)*integral
+                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod, a = 0, b = 2*np.pi, N = 100000)
     else:
         for j in range(0, 2*K+1):
             if j == 0:
                 v_hat_prime_mc[i,j] = 0
             elif (j % 2) == 0 and j != 0:
                 inner_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*dphi_even(j,x)
-
-                ar = np.zeros(N)
-                for k in range(0, N):
-                    ar[k] = random.uniform(a, b)
-                
-                integral = 0
-                for x_n in ar:
-                    integral += inner_prod(x_n)
-                    
-                v_hat_prime_mc[i,j] = ((b-a)/N)*integral
+                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod, a = 0, b = 2*np.pi, N = 100000)
             else:
                 inner_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*dphi_odd(j,x)
-                
-                ar = np.zeros(N)
-                for k in range(0, N):
-                    ar[k] = random.uniform(a, b)
-                
-                integral = 0
-                for x_n in ar:
-                    integral += inner_prod(x_n)
-                    
-                v_hat_prime_mc[i,j] = ((b-a)/N)*integral
+                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod, a = 0, b = 2*np.pi, N = 100000)
+
              
 v_hat_prime_mc = np.reshape(v_hat_prime_mc, ((2*J+1)*(2*K+1), 1))
 
@@ -322,347 +279,105 @@ for i in range(0, 2*I+1):
                     if j == 0:
                         for k in range(0, 2*I+1):
                             if k == 0:
-                                triple_prod = lambda x: 1/(2*np.pi)
-                                    
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral
+                                c_mc[i,j,k] = 1
                             elif (k % 2) == 0 and k!= 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(k,x)  
-                                    
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                           
                             else:
-                                    triple_prod = lambda x: (1/(2*np.pi))*phi_odd(k,x) 
-                                    
-                                    ar = np.zeros(N)
-                                    for l in range(0, N):
-                                        ar[l] = random.uniform(a, b)
-                                    
-                                    integral = 0
-                                    for x_n in ar:
-                                        integral += triple_prod(x_n)
-                    
-                                    c_mc[i,j,k] = ((b-a)/N)*integral   
+                                triple_prod = lambda x: (1/(2*np.pi))*phi_odd(k,x) 
+                            c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)
                     elif (j % 2) == 0 and j != 0:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(j,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(j,x)*phi_even(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(j,x)*phi_odd(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                      
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)
                     else:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(j,x)
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(j,x)*phi_even(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(j,x)*phi_odd(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)              
             elif (i % 2) == 0 and i != 0:
                 for j in range(0, 2*I+1):
                     if j == 0:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                        
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_even(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                         
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_odd(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                      
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                     
                     elif (j % 2) == 0 and j != 0:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_even(j,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_even(j,x)*phi_even(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_even(j,x)*phi_odd(k,x)
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                      
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                      
                     else:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_odd(j,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_odd(j,x)*phi_even(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_odd(j,x)*phi_odd(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)              
             else:
                 for j in range(0, 2*I+1):
                     if j == 0:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_even(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_odd(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                      
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                    
                     elif (j % 2) == 0 and j != 0:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_even(j,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_even(j,x)*phi_even(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                           
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_even(j,x)*phi_odd(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                      
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                    
                     else:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_odd(j,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_odd(j,x)*phi_even(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral                                        
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                                      
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_odd(j,x)*phi_odd(k,x)
-                                
-                                ar = np.zeros(N)
-                                for l in range(0, N):
-                                    ar[l] = random.uniform(a, b)
-                                    
-                                integral = 0
-                                for x_n in ar:
-                                    integral += triple_prod(x_n)
-                    
-                                c_mc[i,j,k] = ((b-a)/N)*integral  
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)
 
 print(np.amax(c-c_mc))
 # %%
@@ -692,11 +407,12 @@ for i in range(0, 2*I+1):
 print(np.amax(g-g_mc))
 # %%
 
-# c_new = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
-# for j in range(0, 2*I+1):
-#     for l in range(0, 2*I+1):
-#         for m in range(0, 2*I+1):
-#            c_new[j,l,m] = (1/2)*(lamb[j] + lamb[l] - lamb[m])*c[j,l,m]
+# %%
+c_new = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+for j in range(0, 2*I+1):
+    for l in range(0, 2*I+1):
+        for m in range(0, 2*I+1):
+           c_new[j,l,m] = (1/2)*(lamb[j] + lamb[l] - lamb[m])*c_mc[j,l,m]
             
 # G_new = np.einsum('ikm, jlm -> ijkl', c, c_new, dtype = float)
 # G_new = G_new[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
@@ -724,6 +440,7 @@ G_mc = np.reshape(G_mc, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
 G_dual_mc = np.linalg.pinv(G_mc)
 
+print(np.amax(G_dual - G_dual_mc))
 # G_dual = np.reshape(G_dual, (21, 7, 21, 7))
 # print(G[2,:])
 # print(np.isnan(G).any())
@@ -731,6 +448,7 @@ G_dual_mc = np.linalg.pinv(G_mc)
 # print(G_dual[0,0,0,:])
 # %%
 
+# %%
 # Apply dual Gram operator G^+ to obtain v_hat
 # non-Monte Carlo varsion 
 v_hat = np.matmul(G_dual, v_hat_prime)

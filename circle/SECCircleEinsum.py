@@ -485,22 +485,42 @@ W_theta_x = np.zeros(10, dtype = float)
 W_theta_y = np.zeros(10, dtype = float)
 vector_approx = np.empty([10, 4], dtype = float)
 
-for i in range(0, 10):
-    for m in range(0, 2*I+1):
-        if m == 0:
-            W_theta_x[i] += p_am[0, m]
-            W_theta_y[i] += p_am[1, m]
-        elif (m % 2) == 0 and m != 0:
-            W_theta_x[i] += p_am[0, m]*phi_even(m, THETA_LST[i])
-            W_theta_y[i] += p_am[1, m]*phi_even(m, THETA_LST[i])
-        else:
-            W_theta_x[i] += p_am[0, m]*phi_odd(m, THETA_LST[i])
-            W_theta_y[i] += p_am[1, m]*phi_odd(m, THETA_LST[i])
+def eigenfunc_x(m):
+         return lambda theta: p_am[0,0] if m == 0 else (p_am[0, m]*np.sqrt(2)*np.cos(m*theta/2) if ((m % 2) == 0 and m != 0) else p_am[0, m]*np.sqrt(2)*np.sin((m+1)*theta/2))
 
+def eigenfunc_y(m):
+         return lambda theta: p_am[1,0] if m == 0 else (p_am[1, m]*np.sqrt(2)*np.cos(m*theta/2) if ((m % 2) == 0 and m != 0) else p_am[1, m]*np.sqrt(2)*np.sin((m+1)*theta/2))
+
+def W_x(args):
+            return lambda theta: sum(eigenfunc_x(a)(theta) for a in args)
+
+def W_y(args):
+            return lambda theta: sum(eigenfunc_y(a)(theta) for a in args)
+
+for i in range(0, 10):
+            W_theta_x[i] = W_x(list(range(0,2*I+1)))(np.angle(TRAIN_X[i]+(1j)*TRAIN_Y[i]))
+            W_theta_y[i] = W_y(list(range(0,2*I+1)))(np.angle(TRAIN_X[i]+(1j)*TRAIN_Y[i]))
             vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x[i], W_theta_y[i]])
+
+print(W_theta_x)
+print(W_theta_y)
 
 X_2, Y_2, U_2, V_2 = zip(*vector_approx)
 
+
+# ODE solver applied to approximated vector fields
+# with initial condition specified
+F = lambda theta, w: np.dot(np.array([[W_x(list(range(0,2*I+1)))(theta), 0], [0, W_y(list(range(0,2*I+1)))(theta)]]), w)
+
+t_eval = np.arange(0, 10.01, 0.01)
+sol = solve_ivp(F, [0, 10], [1, 1], t_eval=t_eval)
+
+plt.figure(figsize = (12, 8))
+plt.plot(sol.y.T[:, 0], sol.y.T[:, 1])
+plt.xlabel('x')
+plt.ylabel('y')
+plt.show()
+# %%
 
 # Apply pushforward map of the embedding F into the data space
 # Monte Carlo varsion 
@@ -539,9 +559,9 @@ X_3, Y_3, U_3, V_3 = zip(*vector_approx_mc)
 
 plt.figure()
 ax = plt.gca()
-# ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'black')
-# ax.quiver(X_2, Y_2, U_2, V_2, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
-ax.quiver(X_3, Y_3, U_3, V_3, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'green')
+ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'black')
+ax.quiver(X_2, Y_2, U_2, V_2, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
+# ax.quiver(X_3, Y_3, U_3, V_3, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'green')
 
 ax.set_xlim([-5,5])
 ax.set_ylim([-5,5])

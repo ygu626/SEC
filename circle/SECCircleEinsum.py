@@ -332,14 +332,20 @@ plt.show()
 
 # ODE solver applied to approximated vector fields
 # with initial condition specified
-F = lambda theta, w: np.dot(np.array([[W_x(list(range(0,2*I+1)))(theta), 0], [0, W_y(list(range(0,2*I+1)))(theta)]]), w)
+# and the true system
+F_sec = lambda theta, w: np.dot(np.array([[W_x(list(range(0,2*I+1)))(theta), 0], [0, W_y(list(range(0,2*I+1)))(theta)]]), w)
+F_true = lambda theta, w: np.dot(np.array([[-np.sin(theta), 0], [0, np.cos(theta)]]), w)
 
 t_eval = np.arange(0, 10.01, 0.01)
-sol = solve_ivp(F, [0, 10], [1, 1], t_eval=t_eval)
+sol_sec = solve_ivp(F_sec, [0, 10], [1, 1], t_eval=t_eval)
+sol_true = solve_ivp(F_true, [0, 10], [1, 1], t_eval=t_eval)
 
 plt.figure(figsize = (12, 8))
-plt.plot(sol.y.T[:, 0], sol.y.T[:, 1])
+plt.plot(sol_sec.y.T[:, 0], sol_sec.y.T[:, 1], color = 'black')
+plt.plot(sol_true.y.T[:, 0], sol_true.y.T[:, 1], color = 'red')
+
 plt.xlabel('x')
 plt.ylabel('y')
 plt.show()
+
 # %%

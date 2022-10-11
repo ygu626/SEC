@@ -13,16 +13,19 @@ I = 10
 J = 10
 K = 3
 
+# Number of data points
+n = 20 
+
 
 # Data points and corresponding vector field on the unit circle
-THETA_LST = list(np.arange(0, 2*np.pi, np.pi/5))
+THETA_LST = list(np.arange(0, 2*np.pi, np.pi/10))
 X_func = lambda theta: np.cos(theta)
 Y_func = lambda theta: np.sin(theta)
 TRAIN_X = np.array(X_func(THETA_LST))
 TRAIN_Y = np.array(Y_func(THETA_LST))
 
-TRAIN_V = np.empty([10, 4], dtype = float)
-for i in range(0, 10):
+TRAIN_V = np.empty([n, 4], dtype = float)
+for i in range(0, n):
         TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
 
 
@@ -277,11 +280,11 @@ d_jlm = np.einsum('ij, ilm -> jlm', v_hat, c, dtype = float)
 p_am = np.einsum('ajl, jlm -> am', h_ajl, d_jlm, dtype = float)
 
 
-W_theta_x = np.zeros(10, dtype = float)
-W_theta_y = np.zeros(10, dtype = float)
-vector_approx = np.empty([10, 4], dtype = float)
+W_theta_x = np.zeros(n, dtype = float)
+W_theta_y = np.zeros(n, dtype = float)
+vector_approx = np.empty([n, 4], dtype = float)
 
-for i in range(0, 10):
+for i in range(0, n):
     for m in range(0, 2*I+1):
         if m == 0:
             W_theta_x[i] += p_am[0, m]

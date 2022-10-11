@@ -9,7 +9,7 @@ from scipy.integrate import solve_ivp
 # number of non-constant eigenform pairs
 L = 10    
 
-I = 10
+I = 25
 J = 10
 K = 3
 
@@ -284,25 +284,27 @@ W_theta_x = np.zeros(n, dtype = float)
 W_theta_y = np.zeros(n, dtype = float)
 vector_approx = np.empty([n, 4], dtype = float)
 
+def eigenfunc_x(m):
+         return lambda theta: p_am[0,0] if m == 0 else (p_am[0, m]*np.sqrt(2)*np.cos(m*theta/2) if ((m % 2) == 0 and m != 0) else p_am[0, m]*np.sqrt(2)*np.sin((m+1)*theta/2))
+
+def eigenfunc_y(m):
+         return lambda theta: p_am[1,0] if m == 0 else (p_am[1, m]*np.sqrt(2)*np.cos(m*theta/2) if ((m % 2) == 0 and m != 0) else p_am[1, m]*np.sqrt(2)*np.sin((m+1)*theta/2))
+
+def W_x(args):
+            return lambda theta: sum(eigenfunc_x(a)(theta) for a in args)
+
+def W_y(args):
+            return lambda theta: sum(eigenfunc_y(a)(theta) for a in args)
+
 for i in range(0, n):
-    for m in range(0, 2*I+1):
-        if m == 0:
-            W_theta_x[i] += p_am[0, m]
-            W_theta_y[i] += p_am[1, m]
-        elif (m % 2) == 0 and m != 0:
-            W_theta_x[i] += p_am[0, m]*phi_even(m, THETA_LST[i])
-            W_theta_y[i] += p_am[1, m]*phi_even(m, THETA_LST[i])
-        else:
-            W_theta_x[i] += p_am[0, m]*phi_odd(m, THETA_LST[i])
-            W_theta_y[i] += p_am[1, m]*phi_odd(m, THETA_LST[i])
-
+            W_theta_x[i] = W_x(list(range(0,2*I+1)))(np.angle(TRAIN_X[i]+(1j)*TRAIN_Y[i]))
+            W_theta_y[i] = W_y(list(range(0,2*I+1)))(np.angle(TRAIN_X[i]+(1j)*TRAIN_Y[i]))
             vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x[i], W_theta_y[i]])
-
 print(W_theta_x)
 print(W_theta_y)
-# %%
 
 X_2, Y_2, U_2, V_2 = zip(*vector_approx)
+
 
 plt.figure()
 ax = plt.gca()

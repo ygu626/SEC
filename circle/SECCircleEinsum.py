@@ -330,23 +330,64 @@ plt.scatter(THETA_LST, W_theta_y, color = 'red')
 plt.show()
 
 
+# %%
 # ODE solver applied to approximated vector fields
 # with initial condition specified
 # and the true system
-F_sec = lambda theta, w: np.dot(np.array([[W_x(list(range(0,2*I+1)))(theta), 0], [0, W_y(list(range(0,2*I+1)))(theta)]]), w)
-F_true = lambda theta, w: np.dot(np.array([[-np.sin(theta), 0], [0, np.cos(theta)]]), w)
+# F_sec = lambda theta, w: np.dot(np.array([[W_x(list(range(0,2*I+1)))(theta), 0], [0, W_y(list(range(0,2*I+1)))(theta)]]), w)
+# F_true = lambda theta, w: np.dot(np.array([[-np.sin(theta), 0], [0, np.cos(theta)]]), w)
+
+def f_sec(t, y):
+    w = np.empty(2, dtype = float)
+    w[0] = W_x(list(range(0,2*I+1)))(y[0], y[1])
+    w[1] = W_y(list(range(0,2*I+1)))(y[0], y[1])
+    return w
+
+def f_true(t, y):
+    theta = np.angle(y[0]+(1j)*y[1])
+    w = np.empty(2, dtype = float)
+    w[0] = -np.sin(theta)
+    w[1] = np.cos(theta)
+    return w
+# %%
+
+t_eval = np.arange(0, 100, 0.01)
+sol_sec = solve_ivp(f_sec, [0, 100], [2, 50], t_eval=t_eval)
+sol_true = solve_ivp(f_true, [0, 100], [2, 50], t_eval=t_eval)
+
+plt.figure(figsize = (8, 8))
+plt.plot(sol_sec.y.T[:, 0], sol_sec.y.T[:, 1], color = 'black')
+plt.plot(sol_true.y.T[:, 0], sol_true.y.T[:, 1], color = 'red')
+plt.show()
+
+sidefig, (ax1, ax2) = plt.subplots(1,2, figsize = (16, 8))
+sidefig.suptitle('Solutions to ODE dw/dx = w(x)')
+
+ax1.plot(sol_sec.y.T[:, 0], sol_sec.y.T[:, 1], color = 'black')
+ax1.set_title('SEC approximated w')
+
+ax2.plot(sol_true.y.T[:, 0], sol_true.y.T[:, 1], color = 'red')
+ax2.set_title('True w')
+
+plt.show()
+
+print(sol_sec.y.T[:, 0])
+print(sol_sec.y.T[:, 1])
+print(sol_sec.y.shape)
+# %%
 
 t_eval = np.arange(0, 2*np.pi, np.pi/100)
-sol_sec = solve_ivp(F_sec, [0, 2*np.pi], [1, 1], t_eval=t_eval)
-sol_true = solve_ivp(F_true, [0, 2*np.pi], [1, 1], t_eval=t_eval)
+sol_sec = solve_ivp(F_sec, [0, 2*np.pi], [1, 0], t_eval=t_eval)
+# sol_true = solve_ivp(F_true, [0, 2*np.pi], [1, 0], t_eval=t_eval)
 
 plt.figure(figsize = (12, 8))
-plt.plot(sol_sec.y.T[:, 0], sol_sec.y.T[:, 1], color = 'black')
+# plt.plot(sol_sec.y.T[:, 0], sol_sec.y.T[:, 1], color = 'black')
 plt.plot(sol_true.y.T[:, 0], sol_true.y.T[:, 1], color = 'red')
 
 plt.xlabel('x')
 plt.ylabel('y')
 plt.show()
+
 
 # %%
 sidefig, (ax1, ax2) = plt.subplots(1,2, figsize = (24, 8))
@@ -359,4 +400,37 @@ ax2.plot(sol_true.y.T[:, 0], sol_true.y.T[:, 1], color = 'red')
 ax2.set_title('True w')
 
 plt.show()
+# %%
+
+# %%
+F = lambda t, s: np.array([-np.sin(np.angle(s[0]+(1j)*s[1])), np.cos(np.angle(s[0]+(1j)*s[1]))])
+
+t_eval = np.arange(0, 100, 0.01)
+sol = solve_ivp(F, [0, 100], [2, 3.5], t_eval=t_eval)
+
+plt.figure(figsize = (8, 8))
+plt.plot(sol.y.T[:, 0], sol.y.T[:, 1])
+plt.xlabel('x')
+plt.ylabel('y')
+plt.show()
+print(sol.y.T[:, 1])
+# %%
+
+# %%
+F = lambda t, s: np.array([W_x(list(range(0,2*I+1)))(s[0], s[1]), W_y(list(range(0,2*I+1)))(s[0],s[1])])
+
+t_eval = np.arange(0, 100, 0.01)
+sol = solve_ivp(F, [0, 100], [10, 0], t_eval=t_eval)
+
+plt.figure(figsize = (8, 8))
+plt.plot(sol.y.T[:, 0], sol.y.T[:, 1])
+plt.xlabel('x')
+plt.ylabel('y')
+plt.show()
+print(sol.y.T[:, 0])
+# %%
+
+# %%
+print(-np.sin(np.angle(1)))
+print(-np.cos(np.angle(1)))
 # %%

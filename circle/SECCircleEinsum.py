@@ -285,20 +285,20 @@ W_theta_y = np.zeros(n, dtype = float)
 vector_approx = np.empty([n, 4], dtype = float)
 
 def eigenfunc_x(m):
-         return lambda theta: p_am[0,0] if m == 0 else (p_am[0, m]*np.sqrt(2)*np.cos(m*theta/2) if ((m % 2) == 0 and m != 0) else p_am[0, m]*np.sqrt(2)*np.sin((m+1)*theta/2))
+         return lambda x, y: p_am[0,0] if m == 0 else (p_am[0, m]*np.sqrt(2)*np.cos(m*np.angle(x+(1j)*y)/2) if ((m % 2) == 0 and m != 0) else p_am[0, m]*np.sqrt(2)*np.sin((m+1)*np.angle(x+(1j)*y)/2))
 
 def eigenfunc_y(m):
-         return lambda theta: p_am[1,0] if m == 0 else (p_am[1, m]*np.sqrt(2)*np.cos(m*theta/2) if ((m % 2) == 0 and m != 0) else p_am[1, m]*np.sqrt(2)*np.sin((m+1)*theta/2))
+         return lambda x, y: p_am[1,0] if m == 0 else (p_am[1, m]*np.sqrt(2)*np.cos(m*np.angle(x+(1j)*y)/2) if ((m % 2) == 0 and m != 0) else p_am[1, m]*np.sqrt(2)*np.sin((m+1)*np.angle(x+(1j)*y)/2))
 
 def W_x(args):
-            return lambda theta: sum(eigenfunc_x(a)(theta) for a in args)
+            return lambda x, y: sum(eigenfunc_x(a)(x, y) for a in args)
 
 def W_y(args):
-            return lambda theta: sum(eigenfunc_y(a)(theta) for a in args)
+            return lambda x, y: sum(eigenfunc_y(a)(x, y) for a in args)
 
 for i in range(0, n):
-            W_theta_x[i] = W_x(list(range(0,2*I+1)))(np.angle(TRAIN_X[i]+(1j)*TRAIN_Y[i]))
-            W_theta_y[i] = W_y(list(range(0,2*I+1)))(np.angle(TRAIN_X[i]+(1j)*TRAIN_Y[i]))
+            W_theta_x[i] = W_x(list(range(0,2*I+1)))(TRAIN_X[i], TRAIN_Y[i])
+            W_theta_y[i] = W_y(list(range(0,2*I+1)))(TRAIN_X[i], TRAIN_Y[i])
             vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x[i], W_theta_y[i]])
 print(W_theta_x)
 print(W_theta_y)
@@ -349,6 +349,7 @@ def f_true(t, y):
     w[0] = -np.sin(theta)
     w[1] = np.cos(theta)
     return w
+
 # %%
 
 t_eval = np.arange(0, 100, 0.01)

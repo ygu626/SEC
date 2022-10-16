@@ -359,7 +359,7 @@ plt.show()
 
 # %%
 
-idefig, (ax1, ax2) = plt.subplots(1,2, figsize = (16, 8))
+sidefig, (ax1, ax2) = plt.subplots(1,2, figsize = (16, 8))
 sidefig.suptitle('Solutions to ODE under the true system')
 
 ax1.plot(sol_true.t, sol_true.y.T[:, 0], color = 'black')

@@ -342,7 +342,7 @@ def f_true(t, y):
     return dydt
     
 # Define time spans and initial values for the true system
-tspan = np.linspace(0, 500, num = 1000)
+tspan = np.linspace(500, 600, num = 1000)
 yinit = [1.56, 1]
 
 # Solve ODE under the true system
@@ -382,7 +382,7 @@ def f_sec(t, y):
     return dydt
     
 # Define time spans and initial values for the true system
-tspan = np.linspace(0, 500, num = 1000)
+tspan = np.linspace(500, 600, num = 1000)
 yinit = [1.56, 1]
 
 # Solve ODE under the true system

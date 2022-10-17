@@ -341,8 +341,8 @@ def f_true(t, y):
     return dydt
     
 # Define time spans and initial values for the true system
-tspan = np.linspace(0, 100, num = 100)
-yinit = [1.5, 0]
+tspan = np.linspace(0, 500, num = 1000)
+yinit = [1.56, 1]
 
 # Solve ODE under the true system
 sol_true = solve_ivp(lambda t, y: f_true(t, y), 
@@ -381,7 +381,7 @@ def f_sec(t, y):
     return dydt
     
 # Define time spans and initial values for the true system
-tspan = np.linspace(0, 100, num = 100)
+tspan = np.linspace(0, 500, num = 1000)
 yinit = [1.56, 1]
 
 # Solve ODE under the true system
@@ -405,11 +405,27 @@ sidefig.suptitle('Solutions to ODE under the SEC approximated system')
 ax1.plot(sol_sec.t, sol_sec.y.T)
 ax1.set_title('x- & y-coordinates prediction w.r.t. time t')
 
+ax2.plot(sol_true.t, sol_true.y.T[:, 0], color = 'black')
 ax2.plot(sol_sec.t, sol_sec.y.T[:, 0], color = 'black')
 ax2.set_title('x-coordinates prediction w.r.t. time t')
 
 ax3.plot(sol_sec.t, sol_sec.y.T[:, 1], color = 'red')
 ax3.set_title('x-coordinates prediction w.r.t. time t')
+
+plt.show()
+# %%
+
+# %%
+sidefig, (ax1, ax2) = plt.subplots(2, figsize = (48, 12))
+sidefig.suptitle('Comparisons for solutions to ODE under the true and SEC approximated systems')
+
+ax1.plot(sol_true.t, sol_true.y.T[:, 0], color = 'red')
+ax1.plot(sol_sec.t, sol_sec.y.T[:, 0], color = 'blue')
+ax1.set_title('x-coordinates prediction w.r.t. time t (true = red, SEC = blue)')
+
+ax2.plot(sol_true.t, sol_true.y.T[:, 1], color = 'red')
+ax2.plot(sol_sec.t, sol_sec.y.T[:, 1], color = 'blue')
+ax2.set_title('x-coordinates prediction w.r.t. time t (true = red, SEC = blue)')
 
 plt.show()
 # %%

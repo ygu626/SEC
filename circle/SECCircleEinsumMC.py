@@ -1,8 +1,9 @@
-#%%
+# %%
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import quad
+from scipy import random
 
 
 # number of non-constant eigenform pairs
@@ -16,19 +17,28 @@ K = 3
 
 # Monte Carlo integration (with forced uniform sampling)
 def monte_carlo_uniform(func, a = 0, b = 2*np.pi, N = 1000):
-    subsets = np.arange(0, N+1, N/10)
-    steps = N/10
+    # subsets = np.arange(0, N+1, N/10)
+    # steps = N/10
+    # for i in range(10):
+        # start = int(subsets[i])
+        # end = int(subsets[i+1])
+        # u[start:end] = np.random.uniform(low = i/10, high = (i+1)/10, size = end - start)
+    # np.random.shuffle(u)
+    
     u = np.zeros(N)
-    for i in range(10):
-        start = int(subsets[i])
-        end = int(subsets[i+1])
-        u[start:end] = np.random.uniform(low = i/10, high = (i+1)/10, size = end - start)
-    np.random.shuffle(u)
+    for i in range(len(u)):
+        u[i] = random.uniform(a, b)
     
-    u_func = func(a+(b-a)*u)
-    s = ((b-a)/N)*u_func.sum()
+    integral = 0.0
     
-    return s
+    for i in u:
+        integral += func(i)
+    
+    ans = (b-a)/N*integral
+    # u_func = func(a+(b-a)*u)
+    # s = ((b-a)/N)*u_func.sum()
+
+    return ans
 
                   
 # Data points and corresponding vector field on the unit circle
@@ -130,33 +140,35 @@ for i in range(0, 2*J+1):
                 v_hat_prime_mc[i,j] = 0
             elif (j % 2) == 0 and j != 0:
                 inner_prod = lambda x: (1/(2*np.pi))*dphi_even(j,x)
-                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod, a = 0, b = 2*np.pi, N = 100000)
+                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod)
             else:
                 inner_prod = lambda x: (1/(2*np.pi))*dphi_odd(j,x)
-                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod, a = 0, b = 2*np.pi, N = 100000)
+                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod)
     elif (i % 2) == 0 and i != 0:
         for j in range(0, 2*K+1):
             if j == 0:
                 v_hat_prime_mc[i,j] = 0
             elif (j % 2) == 0 and j != 0:
                 inner_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*dphi_even(j,x)
-                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod, a = 0, b = 2*np.pi, N = 100000)
+                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod)
             else:
                 inner_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*dphi_odd(j,x)
-                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod, a = 0, b = 2*np.pi, N = 100000)
+                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod)
     else:
         for j in range(0, 2*K+1):
             if j == 0:
                 v_hat_prime_mc[i,j] = 0
             elif (j % 2) == 0 and j != 0:
                 inner_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*dphi_even(j,x)
-                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod, a = 0, b = 2*np.pi, N = 100000)
+                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod)
             else:
                 inner_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*dphi_odd(j,x)
-                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod, a = 0, b = 2*np.pi, N = 100000)
+                v_hat_prime_mc[i,j] = monte_carlo_uniform(inner_prod)
 
              
 v_hat_prime_mc = np.reshape(v_hat_prime_mc, ((2*J+1)*(2*K+1), 1))
+print(np.amax(v_hat_prime - v_hat_prime_mc))
+# %%
 
 
 # Compute c_ijk coefficients
@@ -282,102 +294,102 @@ for i in range(0, 2*I+1):
                                 c_mc[i,j,k] = 1
                             elif (k % 2) == 0 and k!= 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(k,x)  
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                           
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                           
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(k,x) 
-                            c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)
+                            c_mc[i,j,k] = monte_carlo_uniform(triple_prod)
                     elif (j % 2) == 0 and j != 0:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(j,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(j,x)*phi_even(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(j,x)*phi_odd(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)
                     else:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(j,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                              
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(j,x)*phi_even(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                              
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(j,x)*phi_odd(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)              
             elif (i % 2) == 0 and i != 0:
                 for j in range(0, 2*I+1):
                     if j == 0:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                        
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                        
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_even(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                         
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                         
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_odd(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                     
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                     
                     elif (j % 2) == 0 and j != 0:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_even(j,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                              
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_even(j,x)*phi_even(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                              
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_even(j,x)*phi_odd(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                      
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                      
                     else:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_odd(j,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                              
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_odd(j,x)*phi_even(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_odd(j,x)*phi_odd(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)              
             else:
                 for j in range(0, 2*I+1):
                     if j == 0:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                              
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_even(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                              
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_odd(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                    
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                    
                     elif (j % 2) == 0 and j != 0:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_even(j,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                              
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_even(j,x)*phi_even(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                           
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                           
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_even(j,x)*phi_odd(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                    
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                    
                     else:
                         for k in range(0, 2*I+1):
                             if k == 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_odd(j,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                              
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                              
                             elif (k % 2) == 0 and k != 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_odd(j,x)*phi_even(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)                                      
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                                      
                             else:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_odd(j,x)*phi_odd(k,x)
-                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod, a = 0, b = 2*np.pi, N = 100000)
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)
 
 print(np.amax(c-c_mc))
 # %%
@@ -506,8 +518,9 @@ print(W_theta_x)
 print(W_theta_y)
 
 X_2, Y_2, U_2, V_2 = zip(*vector_approx)
+# %%
 
-
+# %%
 # Apply pushforward map of the embedding F into the data space
 # Monte Carlo varsion 
 g_mc = g_mc[:(2*K+1), :, :]
@@ -541,13 +554,14 @@ print(W_theta_x_mc)
 print(W_theta_y_mc)
 
 X_3, Y_3, U_3, V_3 = zip(*vector_approx_mc)
+# %%
 
-
+# %%
 plt.figure()
 ax = plt.gca()
-ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'black')
-ax.quiver(X_2, Y_2, U_2, V_2, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
-# ax.quiver(X_3, Y_3, U_3, V_3, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'green')
+# ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'black')
+# ax.quiver(X_2, Y_2, U_2, V_2, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
+ax.quiver(X_3, Y_3, U_3, V_3, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'green')
 
 ax.set_xlim([-5,5])
 ax.set_ylim([-5,5])
@@ -562,12 +576,12 @@ plt.show()
 
 plt.scatter(THETA_LST, -TRAIN_Y, color = 'black')
 plt.scatter(THETA_LST, W_theta_x, color = 'red')
-# plt.scatter(THETA_LST, W_theta_x_mc, color = 'green')
+plt.scatter(THETA_LST, W_theta_x_mc, color = 'green')
 plt.show()
 
 
 plt.scatter(THETA_LST, TRAIN_X, color = 'black')
 plt.scatter(THETA_LST, W_theta_y, color = 'red')
-# plt.scatter(THETA_LST, W_theta_y_mc, color = 'green')
+plt.scatter(THETA_LST, W_theta_y_mc, color = 'green')
 plt.show()
 # %%

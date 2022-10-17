@@ -337,7 +337,8 @@ plt.show()
 
 # Define derivative function for the true system
 def f_true(t, y):
-    dydt = [-np.sin(np.angle(y[0]+(1j)*y[1])), np.cos(np.angle(y[0]+(1j)*y[1]))]
+    # dydt = [-np.sin(np.angle(y[0]+(1j)*y[1])), np.cos(np.angle(y[0]+(1j)*y[1]))]
+    dydt = [-np.sin(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0]))]
     return dydt
     
 # Define time spans and initial values for the true system

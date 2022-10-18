@@ -17,27 +17,16 @@ K = 3
 
 # Monte Carlo integration (with forced uniform sampling)
 def monte_carlo_uniform(func, a = 0, b = 2*np.pi, N = 1000):
-    # subsets = np.arange(0, N+1, N/10)
-    # steps = N/10
-    # for i in range(10):
-        # start = int(subsets[i])
-        # end = int(subsets[i+1])
-        # u[start:end] = np.random.uniform(low = i/10, high = (i+1)/10, size = end - start)
-    # np.random.shuffle(u)
-    
+
     u = np.zeros(N)
     for i in range(len(u)):
         u[i] = random.uniform(a, b)
     
     integral = 0.0
-    
     for i in u:
         integral += func(i)
     
     ans = (b-a)/N*integral
-    # u_func = func(a+(b-a)*u)
-    # s = ((b-a)/N)*u_func.sum()
-
     return ans
 
                   
@@ -291,7 +280,8 @@ for i in range(0, 2*I+1):
                     if j == 0:
                         for k in range(0, 2*I+1):
                             if k == 0:
-                                c_mc[i,j,k] = 1
+                                triple_prod = lambda x: (1/(2*np.pi))
+                                c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                           
                             elif (k % 2) == 0 and k!= 0:
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_even(k,x)  
                                 c_mc[i,j,k] = monte_carlo_uniform(triple_prod)                           
@@ -391,7 +381,9 @@ for i in range(0, 2*I+1):
                                 triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_odd(j,x)*phi_odd(k,x)
                                 c_mc[i,j,k] = monte_carlo_uniform(triple_prod)
 
-print(np.amax(c-c_mc))
+# %%
+print(c[1,0:3,0:3])
+print(c_mc[1,0:3,0:3])
 # %%
 
 # %%

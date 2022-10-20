@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import quad
+from scipy import random
 from scipy.integrate import solve_ivp
 
 
@@ -33,35 +34,18 @@ def triple_prod(f, g, h):
 def quad_l2_integral(f, a, b):
     return (1/(2*np.pi))*quad(f, a, b, limit = 100)[0]
     
+# (L2) Monte Carlo integration
+def monte_carlo_integral(f, a = 0, b = 2*np.pi, N = 1000):
 
-# Data points and corresponding vector field on the unit circle
-THETA_LST = list(np.arange(0, 2*np.pi, np.pi/10))
-X_func = lambda theta: np.cos(theta)
-Y_func = lambda theta: np.sin(theta)
-TRAIN_X = np.array(X_func(THETA_LST))
-TRAIN_Y = np.array(Y_func(THETA_LST))
-
-TRAIN_V = np.empty([n, 4], dtype = float)
-for i in range(0, n):
-        TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
-
-
-# Plot the unit circle and the (training) vector field
-X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
-plt.figure()
-ax = plt.gca()
-ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
-ax.set_xlim([-5,5])
-ax.set_ylim([-5,5])
-
-t = np.linspace(0, 2*np.pi, 100000)
-ax.plot(np.cos(t), np.sin(t), linewidth = 2.5, color = 'blue')
-
-# plt.draw()
-# plt.show()
-
-# print(U_1)
-# print(V_1)
+    u = np.zeros(N)
+    for i in range(len(u)):
+        u[i] = random.uniform(a, b)
+    
+    integral = 0.0
+    for i in u:
+        integral += (1/N)*f(i)
+    
+    return integral
 
 
 # Eigenvalues lambda_i
@@ -105,6 +89,14 @@ def dphi_basis(i):
     return dphi
 
 dphis = [dphi_basis(i) for i in range(2*I+1)]
+
+
+# Eigenfunctions phi_i(theta) and corresponding derivatives
+phi_even = lambda i, x: np.sqrt(2)*np.cos(i*x/2)
+phi_odd = lambda i, x: np.sqrt(2)*np.sin((i+1)*x/2)
+
+dphi_even = lambda i, x: -np.sqrt(2)*(i/2)*np.sin(i*x/2)
+dphi_odd = lambda i, x: np.sqrt(2)*((i+1)/2)*np.cos((i+1)*x/2)
 
 
 # Apply analysis operator T to obtain v_hat_prime
@@ -179,6 +171,21 @@ v_hat = np.reshape(v_hat, (2*J+1, 2*K+1))
 # %%
 
 
+# Data points and corresponding vector field on the unit circle
+THETA_LST = list(np.arange(0, 2*np.pi, np.pi/10))
+X_func = lambda theta: np.cos(theta)
+Y_func = lambda theta: np.sin(theta)
+TRAIN_X = np.array(X_func(THETA_LST))
+TRAIN_Y = np.array(Y_func(THETA_LST))
+
+TRAIN_V = np.empty([n, 4], dtype = float)
+for i in range(0, n):
+        TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
+
+X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
+
+
+# Apply oushforward map to v_hat to obtain approximated vector fields
 F_k = np.zeros([2, 2*I+1], dtype = float)
 F_k[1, 1] = 1/np.sqrt(2)
 F_k[0, 2] = 1/np.sqrt(2)
@@ -241,8 +248,9 @@ plt.scatter(THETA_LST, TRAIN_X, color = 'black')
 plt.scatter(THETA_LST, W_theta_y, color = 'red')
 plt.show()
 
-
 # %%
+
+
 # ODE solver applied to approximated vector fields
 # with initial condition specified
 # and the true system

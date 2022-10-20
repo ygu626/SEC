@@ -107,14 +107,6 @@ def dphi_basis(i):
 dphis = [dphi_basis(i) for i in range(2*I+1)]
 
 
-# Eigenfunctions phi_i(theta) and corresponding derivatives
-phi_even = lambda i, x: np.sqrt(2)*np.cos(i*x/2)
-phi_odd = lambda i, x: np.sqrt(2)*np.sin((i+1)*x/2)
-
-dphi_even = lambda i, x: -np.sqrt(2)*(i/2)*np.sin(i*x/2)
-dphi_odd = lambda i, x: np.sqrt(2)*((i+1)/2)*np.cos((i+1)*x/2)
-
-
 # Apply analysis operator T to obtain v_hat_prime
 v_hat_prime = np.empty([2*J+1, 2*K+1], dtype = float)
 

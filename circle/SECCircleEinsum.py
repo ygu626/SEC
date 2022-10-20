@@ -9,7 +9,7 @@ from scipy.integrate import solve_ivp
 # number of non-constant eigenform pairs
 L = 10    
 
-I = 25
+I = 10
 J = 10
 K = 3
 
@@ -104,119 +104,45 @@ for i in range(0, 2*J+1):
 v_hat_prime = np.reshape(v_hat_prime, ((2*J+1)*(2*K+1), 1))
 
 
+def phi_basis(i):
+    if i == 0:
+        def phi(x):
+            return 1
+    elif (i % 2) == 1:
+        def phi(x):
+            return np.sqrt(2)*np.sin((i + 1) * x / 2)
+    else:
+        def phi(x):
+            return np.sqrt(2)*np.cos(i * x / 2)
+    return phi
+
+phis = [phi_basis(i) for i in range(2*I+1)]
+
+def double_prod(f, g):
+    def fg(x):
+        return f(x) * g(x)
+    return fg
+
+def triple_prod(f, g, h):
+    def fgh(x):
+        return f(x) * g(x) * h(x)
+    return fgh
+
+# (L2) integration using scipy quad function
+def quad_l2_integral(f, a, b):
+    return (1/(2*np.pi))*quad(f, a, b, limit = 100)[0]
+    
 # Compute c_ijk coefficients
 c = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
 for i in range(0, 2*I+1):
-            if i == 0:
-                for j in range(0, 2*I+1):
-                    if j == 0:
-                        for k in range(0, 2*I+1):
-                              if k == 0:
-                                    triple_prod = lambda x: 1/(2*np.pi)
-                                    c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                              elif (k % 2) == 0 and k!= 0:
-                                    triple_prod = lambda x: (1/(2*np.pi))*phi_even(k,x)  
-                                    c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                              else:
-                                    triple_prod = lambda x: (1/(2*np.pi))*phi_odd(k,x)  
-                                    c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                    elif (j % 2) == 0 and j != 0:
-                        for k in range(0, 2*I+1):
-                            if k == 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_even(j,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            elif (k % 2) == 0 and k != 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_even(j,x)*phi_even(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            else:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_even(j,x)*phi_odd(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                    else:
-                        for k in range(0, 2*I+1):
-                            if k == 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_odd(j,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            elif (k % 2) == 0 and k != 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_odd(j,x)*phi_even(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            else:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_odd(j,x)*phi_odd(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-            elif (i % 2) == 0 and i != 0:
-                for j in range(0, 2*I+1):
-                    if j == 0:
-                        for k in range(0, 2*I+1):
-                            if k == 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            elif (k % 2) == 0 and k != 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_even(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            else:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_odd(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]                    
-                    elif (j % 2) == 0 and j != 0:
-                        for k in range(0, 2*I+1):
-                            if k == 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_even(j,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            elif (k % 2) == 0 and k != 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_even(j,x)*phi_even(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            else:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_even(j,x)*phi_odd(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                    else:
-                        for k in range(0, 2*I+1):
-                            if k == 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_odd(j,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            elif (k % 2) == 0 and k != 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_odd(j,x)*phi_even(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            else:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*phi_odd(j,x)*phi_odd(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-            else:
-                for j in range(0, 2*I+1):
-                    if j == 0:
-                        for k in range(0, 2*I+1):
-                            if k == 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            elif (k % 2) == 0 and k != 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_even(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            else:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_odd(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                    elif (j % 2) == 0 and j != 0:
-                        for k in range(0, 2*I+1):
-                            if k == 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_even(j,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            elif (k % 2) == 0 and k != 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_even(j,x)*phi_even(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            else:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_even(j,x)*phi_odd(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                    else:
-                        for k in range(0, 2*I+1):
-                            if k == 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_odd(j,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            elif (k % 2) == 0 and k != 0:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_odd(j,x)*phi_even(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
-                            else:
-                                triple_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*phi_odd(j,x)*phi_odd(k,x)
-                                c[i,j,k] = quad(triple_prod, 0, 2*np.pi)[0]
+    for j in range(0, 2*I+1):
+        for k in range(0, 2*I+1):
+            f = triple_prod(phis[i], phis[j], phis[k])
+            c[i, j, k] = quad_l2_integral(f, 0, 2*np.pi)
 
-# print(c[2,:,:])
 # print(np.isnan(c).any())
 # print(np.isinf(c).any())
-
+# %%
 
 # Compute g_kij Riemannian metric coefficients
 g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)

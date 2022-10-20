@@ -17,6 +17,23 @@ K = 3
 n = 20 
 
 
+# Double and triple products of functions
+def double_prod(f, g):
+    def fg(x):
+        return f(x) * g(x)
+    return fg
+
+def triple_prod(f, g, h):
+    def fgh(x):
+        return f(x) * g(x) * h(x)
+    return fgh
+
+
+# (L2) integration using scipy quad function
+def quad_l2_integral(f, a, b):
+    return (1/(2*np.pi))*quad(f, a, b, limit = 100)[0]
+    
+
 # Data points and corresponding vector field on the unit circle
 THETA_LST = list(np.arange(0, 2*np.pi, np.pi/10))
 X_func = lambda theta: np.cos(theta)
@@ -43,8 +60,8 @@ ax.plot(np.cos(t), np.sin(t), linewidth = 2.5, color = 'blue')
 # plt.draw()
 # plt.show()
 
-print(U_1)
-print(V_1)
+# print(U_1)
+# print(V_1)
 
 
 # Eigenvalues lambda_i
@@ -58,52 +75,7 @@ for i in range(0, 2*I+1):
         lamb[i] = (i+1)**2/4
 
 
-# Eigenfunctions phi_i(theta) and corresponding derivatives
-phi_even = lambda i, x: np.sqrt(2)*np.cos(i*x/2)
-phi_odd = lambda i, x: np.sqrt(2)*np.sin((i+1)*x/2)
-
-dphi_even = lambda i, x: -np.sqrt(2)*(i/2)*np.sin(i*x/2)
-dphi_odd = lambda i, x: np.sqrt(2)*((i+1)/2)*np.cos((i+1)*x/2)
-
-
-# Apply analysis operator T to obtain v_hat_prime
-v_hat_prime = np.empty([2*J+1, 2*K+1], dtype = float)
-
-for i in range(0, 2*J+1):
-    if i == 0:
-        for j in range(0, 2*K+1):
-            if j == 0:
-                v_hat_prime[i,j] = 0
-            elif (j % 2) == 0 and j != 0:
-                inner_prod = lambda x: (1/(2*np.pi))*dphi_even(j,x)
-                v_hat_prime[i,j] = quad(inner_prod, 0, 2*np.pi)[0]
-            else:
-                inner_prod = lambda x: (1/(2*np.pi))*dphi_odd(j,x)
-                v_hat_prime[i,j] = quad(inner_prod, 0, 2*np.pi)[0]
-    elif (i % 2) == 0 and i != 0:
-        for j in range(0, 2*K+1):
-            if j == 0:
-                v_hat_prime[i,j] = 0
-            elif (j % 2) == 0 and j != 0:
-                inner_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*dphi_even(j,x)
-                v_hat_prime[i,j] = quad(inner_prod, 0, 2*np.pi)[0]
-            else:
-                inner_prod = lambda x: (1/(2*np.pi))*phi_even(i,x)*dphi_odd(j,x)
-                v_hat_prime[i,j] = quad(inner_prod, 0, 2*np.pi)[0]
-    else:
-        for j in range(0, 2*K+1):
-            if j == 0:
-                v_hat_prime[i,j] = 0
-            elif (j % 2) == 0 and j != 0:
-                inner_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*dphi_even(j,x)
-                v_hat_prime[i,j] = quad(inner_prod, 0, 2*np.pi)[0]
-            else:
-                inner_prod = lambda x: (1/(2*np.pi))*phi_odd(i,x)*dphi_odd(j,x)
-                v_hat_prime[i,j] = quad(inner_prod, 0, 2*np.pi)[0]
-
-v_hat_prime = np.reshape(v_hat_prime, ((2*J+1)*(2*K+1), 1))
-
-
+# Eigenfunctions phi_i(theta)
 def phi_basis(i):
     if i == 0:
         def phi(x):
@@ -118,20 +90,42 @@ def phi_basis(i):
 
 phis = [phi_basis(i) for i in range(2*I+1)]
 
-def double_prod(f, g):
-    def fg(x):
-        return f(x) * g(x)
-    return fg
 
-def triple_prod(f, g, h):
-    def fgh(x):
-        return f(x) * g(x) * h(x)
-    return fgh
+# Derivatives of eigenfunctions dphi_i(theta)
+def dphi_basis(i):
+    if i == 0:
+        def dphi(x):
+            return 0
+    elif (i % 2) == 1:
+        def dphi(x):
+            return np.sqrt(2)*((i + 1) / 2)*np.cos((i + 1) * x / 2)
+    else:
+        def dphi(x):
+            return -np.sqrt(2)*(i / 2)*np.sin(i * x / 2)
+    return dphi
 
-# (L2) integration using scipy quad function
-def quad_l2_integral(f, a, b):
-    return (1/(2*np.pi))*quad(f, a, b, limit = 100)[0]
-    
+dphis = [dphi_basis(i) for i in range(2*I+1)]
+
+
+# Eigenfunctions phi_i(theta) and corresponding derivatives
+phi_even = lambda i, x: np.sqrt(2)*np.cos(i*x/2)
+phi_odd = lambda i, x: np.sqrt(2)*np.sin((i+1)*x/2)
+
+dphi_even = lambda i, x: -np.sqrt(2)*(i/2)*np.sin(i*x/2)
+dphi_odd = lambda i, x: np.sqrt(2)*((i+1)/2)*np.cos((i+1)*x/2)
+
+
+# Apply analysis operator T to obtain v_hat_prime
+v_hat_prime = np.empty([2*J+1, 2*K+1], dtype = float)
+
+for i in range(0, 2*J+1):
+    for j in range(0, 2*K+1):
+        f = double_prod(phis[i], dphis[j])
+        v_hat_prime[i, j] = quad_l2_integral(f, 0, 2*np.pi)
+
+v_hat_prime = np.reshape(v_hat_prime, ((2*J+1)*(2*K+1), 1))
+
+
 # Compute c_ijk coefficients
 c = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
 for i in range(0, 2*I+1):

@@ -2,7 +2,6 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-import multiprocessing as mp
 from itertools import product
 from scipy.integrate import quad
 from scipy import random
@@ -107,25 +106,19 @@ dphis = [dphi_basis(i) for i in range(2*I+1)]
 # Using quad integration
 v_hat_prime = np.empty([2*J+1, 2*K+1], dtype = float)
 
-for i in range(0, 2*J+1):
-    for j in range(0, 2*K+1):
-        f = double_prod(phis[i], dphis[j])
-        v_hat_prime[i, j] = quad_l2_integral(f, 0, 2*np.pi)
+for i, j in product(range(0, 2*J+1), range(0, 2*K+1)):
+    f = double_prod(phis[i], dphis[j])
+    v_hat_prime[i, j] = quad_l2_integral(f, 0, 2*np.pi)
 
 v_hat_prime = np.reshape(v_hat_prime, ((2*J+1)*(2*K+1), 1))
-
 # %%
-
-
 
 # Compute c_ijk coefficients
 # Using Quad integration
 c = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
-for i in range(0, 2*I+1):
-    for j in range(0, 2*I+1):
-        for k in range(0, 2*I+1):
-            f = triple_prod(phis[i], phis[j], phis[k])
-            c[i, j, k] = quad_l2_integral(f, 0, 2*np.pi)
+for i, j, k in product(range(0, 2*I+1), range(0, 2*I+1), range(0, 2*I+1)):
+    f = triple_prod(phis[i], phis[j], phis[k])
+    c[i, j, k] = quad_l2_integral(f, 0, 2*np.pi)
 
 # print(np.isnan(c).any())
 # print(np.isinf(c).any())

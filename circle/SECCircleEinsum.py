@@ -10,12 +10,12 @@ from scipy.integrate import solve_ivp
 # number of non-constant eigenform pairs
 L = 10    
 
-I = 10
+I = 25
 J = 10
 K = 3
 
 # Number of data points
-n = 20 
+n = 4 
 
 
 # Double and triple products of functions
@@ -169,7 +169,7 @@ v_hat = np.reshape(v_hat, (2*J+1, 2*K+1))
 
 
 # Data points and corresponding vector field on the unit circle
-THETA_LST = list(np.arange(0, 2*np.pi, np.pi/10))
+THETA_LST = list(np.arange(0, 2*np.pi, np.pi/n))
 X_func = lambda theta: np.cos(theta)
 Y_func = lambda theta: np.sin(theta)
 TRAIN_X = np.array(X_func(THETA_LST))

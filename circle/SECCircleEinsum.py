@@ -2,6 +2,8 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import multiprocessing as mp
+from itertools import product
 from scipy.integrate import quad
 from scipy import random
 from scipy.integrate import solve_ivp
@@ -10,12 +12,22 @@ from scipy.integrate import solve_ivp
 # number of non-constant eigenform pairs
 L = 10    
 
-I = 25
+I = 10
 J = 10
 K = 3
 
 # Number of data points
 n = 4 
+
+# Generate values for each parameter i, j, k
+i = range(2*I+1)
+j = range(2*J+1)
+k = range(2*K+1)
+
+# Generate two lists of tuples where each tuple is a combination of parameters.
+#The list will contain all possible combinations of parameters.
+paramlist_c = list(product(i, i, i))
+paramlist_v = list(product(j, k))
 
 
 # Double and triple products of functions
@@ -102,6 +114,9 @@ for i in range(0, 2*J+1):
 
 v_hat_prime = np.reshape(v_hat_prime, ((2*J+1)*(2*K+1), 1))
 
+# %%
+
+
 
 # Compute c_ijk coefficients
 # Using Quad integration
@@ -169,7 +184,7 @@ v_hat = np.reshape(v_hat, (2*J+1, 2*K+1))
 
 
 # Data points and corresponding vector field on the unit circle
-THETA_LST = list(np.arange(0, 2*np.pi, np.pi/n))
+THETA_LST = list(np.arange(0, 2*np.pi, np.pi/(n/2)))
 X_func = lambda theta: np.cos(theta)
 Y_func = lambda theta: np.sin(theta)
 TRAIN_X = np.array(X_func(THETA_LST))

@@ -2,6 +2,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import multiprocessing as mp
 from itertools import product
 from scipy.integrate import quad
 from scipy import random

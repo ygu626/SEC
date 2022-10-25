@@ -2,11 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import multiprocessing as mp
 from multiprocessing import set_start_method
-from itertools import product
 from scipy.integrate import quad
 from scipy.integrate import solve_ivp
 from numpy import random
-
 
 # number of non-constant eigenform pairs
 L = 10
@@ -100,14 +98,16 @@ dphis = [dphi_basis(i) for i in range(2 * I + 1)]
 # Using multiprocessing to reduce runtimes of nested for loops
 # Apply analysis operator T to obtain v_hat_prime
 # Using quad integration
-def v_hat_prime_func(i,j):
+def v_hat_prime_func(i, j):
     return quad_l2_integral(double_prod(phis[i], dphis[j]), 0, 2 * np.pi)
+
+
 if __name__ == '__main__':
     set_start_method('fork')
     with mp.Pool() as pool:
         v_hat_prime = pool.starmap(v_hat_prime_func,
-                               [(i, j) for i in range(0, 2 * J + 1)
-                                       for j in range(0, 2 * K + 1)])
+                                   [(i, j) for i in range(0, 2 * J + 1)
+                                    for j in range(0, 2 * K + 1)])
 
 
 # Compute c_ijk coefficients
@@ -115,13 +115,14 @@ if __name__ == '__main__':
 def c_func(i, j, k):
     return quad_l2_integral(triple_prod(phis[i], phis[j], phis[k]), 0, 2 * np.pi)
 
+
 if __name__ == '__main__':
     with mp.Pool() as pool:
         c = pool.starmap(c_func,
-                               [(i, j, k) for i in range(0, 2 * I + 1)
-                                          for j in range(0, 2 * I + 1)
-                                          for k in range(0, 2 * I + 1)])
-        c = np.reshape(c, (2 * I + 1, 2 * I + 1, 2 * I +1))
+                         [(i, j, k) for i in range(0, 2 * I + 1)
+                          for j in range(0, 2 * I + 1)
+                          for k in range(0, 2 * I + 1)])
+        c = np.reshape(c, (2 * I + 1, 2 * I + 1, 2 * I + 1))
 
 # print(np.isnan(c).any())
 # print(np.isinf(c).any())
@@ -262,6 +263,7 @@ plt.scatter(THETA_LST, TRAIN_X, color='black')
 plt.scatter(THETA_LST, W_theta_y, color='red')
 plt.show()
 
+
 # %%
 
 
@@ -274,18 +276,19 @@ def f_true(t, y):
     # dydt = [-np.sin(np.angle(y[0]+(1j)*y[1])), np.cos(np.angle(y[0]+(1j)*y[1]))]
     dydt = [-np.sin(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0]))]
     return dydt
-    
+
+
 # Define time spans and initial values for the true system
-tspan = np.linspace(500, 600, num = 1000)
-yinit = [1.56, 1]
+tspan = np.linspace(0, 10000, num=1000)
+yinit = [10, 24]
 
 # Solve ODE under the true system
-sol_true = solve_ivp(lambda t, y: f_true(t, y), 
-                [tspan[0], tspan[-1]], yinit, t_eval=tspan, rtol = 1e-5)
+sol_true = solve_ivp(lambda t, y: f_true(t, y),
+                     [tspan[0], tspan[-1]], yinit, t_eval=tspan, rtol=1e-5)
 
-# %% 
+# %%
 # Plot solutions to the true system
-plt.figure(figsize = (8, 8))
+plt.figure(figsize=(8, 8))
 plt.plot(sol_true.y.T[:, 0], sol_true.y.T[:, 1])
 
 plt.xlabel('x')
@@ -294,38 +297,41 @@ plt.title('Solutions to ODE under the true system')
 plt.show()
 
 # %%
-sidefig, (ax1, ax2, ax3) = plt.subplots(3, figsize = (24, 16))
+sidefig, (ax1, ax2, ax3) = plt.subplots(3, figsize=(24, 16))
 sidefig.suptitle('Solutions to ODE under the true system')
 
 ax1.plot(sol_true.t, sol_true.y.T)
 ax1.set_title('x- & y-coordinates prediction w.r.t. time t')
 
-ax2.plot(sol_true.t, sol_true.y.T[:, 0], color = 'black')
+ax2.plot(sol_true.t, sol_true.y.T[:, 0], color='black')
 ax2.set_title('x-coordinates prediction w.r.t. time t')
 
-ax3.plot(sol_true.t, sol_true.y.T[:, 1], color = 'red')
-ax3.set_title('x-coordinates prediction w.r.t. time t')
+ax3.plot(sol_true.t, sol_true.y.T[:, 1], color='red')
+ax3.set_title('y-coordinates prediction w.r.t. time t')
 
 plt.show()
+
+
 # %%
 
 # %%
 # Define derivative function for the SEC approximated system
 def f_sec(t, y):
-    dydt = [W_x(list(range(0,2*I+1)))(y[0], y[1]), W_y(list(range(0,2*I+1)))(y[0], y[1])]
+    dydt = [W_x(list(range(0, 2 * I + 1)))(y[0], y[1]), W_y(list(range(0, 2 * I + 1)))(y[0], y[1])]
     return dydt
-    
+
+
 # Define time spans and initial values for the true system
-tspan = np.linspace(500, 600, num = 1000)
-yinit = [1.56, 1]
+tspan = np.linspace(0, 10000, num=1000)
+yinit = [10, 24]
 
 # Solve ODE under the true system
-sol_sec = solve_ivp(lambda t, y: f_sec(t, y), 
-                [tspan[0], tspan[-1]], yinit, t_eval=tspan, rtol = 1e-5)
+sol_sec = solve_ivp(lambda t, y: f_sec(t, y),
+                    [tspan[0], tspan[-1]], yinit, t_eval=tspan, rtol=1e-5)
 
-# %% 
+# %%
 # Plot solutions to the true system
-plt.figure(figsize = (8, 8))
+plt.figure(figsize=(8, 8))
 plt.plot(sol_sec.y.T[:, 0], sol_sec.y.T[:, 1])
 
 plt.xlabel('x')
@@ -334,40 +340,40 @@ plt.title('Solutions to ODE under the SEC approximated system')
 plt.show()
 
 # %%
-sidefig, (ax1, ax2, ax3) = plt.subplots(3, figsize = (24, 16))
+sidefig, (ax1, ax2, ax3) = plt.subplots(3, figsize=(24, 16))
 sidefig.suptitle('Solutions to ODE under the SEC approximated system')
 
 ax1.plot(sol_sec.t, sol_sec.y.T)
 ax1.set_title('x- & y-coordinates prediction w.r.t. time t')
 
-ax2.plot(sol_true.t, sol_true.y.T[:, 0], color = 'black')
-ax2.plot(sol_sec.t, sol_sec.y.T[:, 0], color = 'black')
+ax2.plot(sol_true.t, sol_true.y.T[:, 0], color='black')
+ax2.plot(sol_sec.t, sol_sec.y.T[:, 0], color='black')
 ax2.set_title('x-coordinates prediction w.r.t. time t')
 
-ax3.plot(sol_sec.t, sol_sec.y.T[:, 1], color = 'red')
-ax3.set_title('x-coordinates prediction w.r.t. time t')
+ax3.plot(sol_sec.t, sol_sec.y.T[:, 1], color='red')
+ax3.set_title('y-coordinates prediction w.r.t. time t')
 
 plt.show()
 # %%
 
 # %%
-sidefig, (ax1, ax2) = plt.subplots(2, figsize = (48, 12))
+sidefig, (ax1, ax2) = plt.subplots(2, figsize=(48, 12))
 sidefig.suptitle('Comparisons for solutions to ODE under the true and SEC approximated systems')
 
-ax1.plot(sol_true.t, sol_true.y.T[:, 0], color = 'red')
-ax1.plot(sol_sec.t, sol_sec.y.T[:, 0], color = 'blue')
+ax1.plot(sol_true.t, sol_true.y.T[:, 0], color='red')
+ax1.plot(sol_sec.t, sol_sec.y.T[:, 0], color='blue')
 ax1.set_title('x-coordinates prediction w.r.t. time t (true = red, SEC = blue)')
 
-ax2.plot(sol_true.t, sol_true.y.T[:, 1], color = 'red')
-ax2.plot(sol_sec.t, sol_sec.y.T[:, 1], color = 'blue')
-ax2.set_title('x-coordinates prediction w.r.t. time t (true = red, SEC = blue)')
+ax2.plot(sol_true.t, sol_true.y.T[:, 1], color='red')
+ax2.plot(sol_sec.t, sol_sec.y.T[:, 1], color='blue')
+ax2.set_title('y-coordinates prediction w.r.t. time t (true = red, SEC = blue)')
 
 plt.show()
 # %%
 
 
 # %%
-## MONTE CARLO SECTION
+# MONTE CARLO SECTION
 
 # Apply analysis operator T to obtain v_hat_prime
 # Using Monte Carlo integration

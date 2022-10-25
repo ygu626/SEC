@@ -1,74 +1,66 @@
-# %%
-
 import matplotlib.pyplot as plt
 import numpy as np
 import multiprocessing as mp
+from multiprocessing import set_start_method
 from itertools import product
 from scipy.integrate import quad
-from scipy import random
 from scipy.integrate import solve_ivp
+from numpy import random
 
 
 # number of non-constant eigenform pairs
-L = 10    
+L = 10
 
-I = 10
+I = 25
 J = 10
 K = 3
 
 # Number of data points
-n = 4 
-
-# Generate values for each parameter i, j, k
-i = range(2*I+1)
-j = range(2*J+1)
-k = range(2*K+1)
-
-# Generate two lists of tuples where each tuple is a combination of parameters.
-#The list will contain all possible combinations of parameters.
-paramlist_c = list(product(i, i, i))
-paramlist_v = list(product(j, k))
+n = 20
 
 
 # Double and triple products of functions
 def double_prod(f, g):
     def fg(x):
         return f(x) * g(x)
+
     return fg
+
 
 def triple_prod(f, g, h):
     def fgh(x):
         return f(x) * g(x) * h(x)
+
     return fgh
 
 
 # (L2) integration using scipy quad function
 def quad_l2_integral(f, a, b):
-    return (1/(2*np.pi))*quad(f, a, b, limit = 100)[0]
-    
-# (L2) Monte Carlo integration
-def monte_carlo_l2_integral(f, a = 0, b = 2*np.pi, N = 1000):
+    return (1 / (2 * np.pi)) * quad(f, a, b, limit=100)[0]
 
+
+# (L2) Monte Carlo integration
+def monte_carlo_l2_integral(f, a=0, b=2 * np.pi, N=1000):
     u = np.zeros(N)
     for i in range(len(u)):
         u[i] = random.uniform(a, b)
-    
+
     integral = 0.0
     for i in u:
-        integral += (1/N)*f(i)
-    
+        integral += (1 / N) * f(i)
+
     return integral
 
 
 # Eigenvalues lambda_i
-lamb = np.empty(2*I+1, dtype = float)
-for i in range(0, 2*I+1):
+lamb = np.empty(2 * I + 1, dtype=float)
+for i in range(0, 2 * I + 1):
     if i == 0:
         lamb[i] = 0
     elif (i % 2) == 0 and i != 0:
-        lamb[i] = i**2/4
+        lamb[i] = i ** 2 / 4
     else:
-        lamb[i] = (i+1)**2/4
+        lamb[i] = (i + 1) ** 2 / 4
 
 
 # Eigenfunctions phi_i(theta)
@@ -78,13 +70,14 @@ def phi_basis(i):
             return 1
     elif (i % 2) == 1:
         def phi(x):
-            return np.sqrt(2)*np.sin((i + 1) * x / 2)
+            return np.sqrt(2) * np.sin((i + 1) * x / 2)
     else:
         def phi(x):
-            return np.sqrt(2)*np.cos(i * x / 2)
+            return np.sqrt(2) * np.cos(i * x / 2)
     return phi
 
-phis = [phi_basis(i) for i in range(2*I+1)]
+
+phis = [phi_basis(i) for i in range(2 * I + 1)]
 
 
 # Derivatives of eigenfunctions dphi_i(theta)
@@ -94,32 +87,41 @@ def dphi_basis(i):
             return 0
     elif (i % 2) == 1:
         def dphi(x):
-            return np.sqrt(2)*((i + 1) / 2)*np.cos((i + 1) * x / 2)
+            return np.sqrt(2) * ((i + 1) / 2) * np.cos((i + 1) * x / 2)
     else:
         def dphi(x):
-            return -np.sqrt(2)*(i / 2)*np.sin(i * x / 2)
+            return -np.sqrt(2) * (i / 2) * np.sin(i * x / 2)
     return dphi
 
-dphis = [dphi_basis(i) for i in range(2*I+1)]
+
+dphis = [dphi_basis(i) for i in range(2 * I + 1)]
 
 
+# Using multiprocessing to reduce runtimes of nested for loops
 # Apply analysis operator T to obtain v_hat_prime
 # Using quad integration
-v_hat_prime = np.empty([2*J+1, 2*K+1], dtype = float)
+def v_hat_prime_func(i,j):
+    return quad_l2_integral(double_prod(phis[i], dphis[j]), 0, 2 * np.pi)
+if __name__ == '__main__':
+    set_start_method('fork')
+    with mp.Pool() as pool:
+        v_hat_prime = pool.starmap(v_hat_prime_func,
+                               [(i, j) for i in range(0, 2 * J + 1)
+                                       for j in range(0, 2 * K + 1)])
 
-for i, j in product(range(0, 2*J+1), range(0, 2*K+1)):
-    f = double_prod(phis[i], dphis[j])
-    v_hat_prime[i, j] = quad_l2_integral(f, 0, 2*np.pi)
-
-v_hat_prime = np.reshape(v_hat_prime, ((2*J+1)*(2*K+1), 1))
-# %%
 
 # Compute c_ijk coefficients
 # Using Quad integration
-c = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
-for i, j, k in product(range(0, 2*I+1), range(0, 2*I+1), range(0, 2*I+1)):
-    f = triple_prod(phis[i], phis[j], phis[k])
-    c[i, j, k] = quad_l2_integral(f, 0, 2*np.pi)
+def c_func(i, j, k):
+    return quad_l2_integral(triple_prod(phis[i], phis[j], phis[k]), 0, 2 * np.pi)
+
+if __name__ == '__main__':
+    with mp.Pool() as pool:
+        c = pool.starmap(c_func,
+                               [(i, j, k) for i in range(0, 2 * I + 1)
+                                          for j in range(0, 2 * I + 1)
+                                          for k in range(0, 2 * I + 1)])
+        c = np.reshape(c, (2 * I + 1, 2 * I + 1, 2 * I +1))
 
 # print(np.isnan(c).any())
 # print(np.isinf(c).any())
@@ -127,23 +129,22 @@ for i, j, k in product(range(0, 2*I+1), range(0, 2*I+1), range(0, 2*I+1)):
 
 # Compute g_kij Riemannian metric coefficients
 # Using quad integration
-g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
-for i in range(0, 2*I+1):
-            for j in range(0, 2*I+1):
-                        for k in range(0, 2*I+1):
-                                    g[i,j,k] = (lamb[i] + lamb[j] - lamb[k])*c[i,j,k]/2
+g = np.empty([2 * I + 1, 2 * I + 1, 2 * I + 1], dtype=float)
+for i in range(0, 2 * I + 1):
+    for j in range(0, 2 * I + 1):
+        for k in range(0, 2 * I + 1):
+            g[i, j, k] = (lamb[i] + lamb[j] - lamb[k]) * c[i, j, k] / 2
 
 # print(g[4,2,2])
 # print(np.isnan(g).any())
 # print(np.isinf(g).any())
 
 
-c_new = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
-for j in range(0, 2*I+1):
-    for l in range(0, 2*I+1):
-        for m in range(0, 2*I+1):
-            c_new[j,l,m] = (1/2)*(lamb[j] + lamb[l] - lamb[m])*c[j,l,m]
-
+c_new = np.empty([2 * I + 1, 2 * I + 1, 2 * I + 1], dtype=float)
+for j in range(0, 2 * I + 1):
+    for l in range(0, 2 * I + 1):
+        for m in range(0, 2 * I + 1):
+            c_new[j, l, m] = (1 / 2) * (lamb[j] + lamb[l] - lamb[m]) * c[j, l, m]
 
 # G_new = np.einsum('ikm, jlm -> ijkl', c, c_new, dtype = float)
 # G_new = G_new[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
@@ -152,11 +153,11 @@ for j in range(0, 2*I+1):
 
 # Compute G_ijkl entries for the Gram operator and its dual
 # Using quad integration
-G = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
-G = np.einsum('ikm, jlm->ijkl', c, g, dtype = float)
+G = np.zeros([2 * I + 1, 2 * I + 1, 2 * I + 1, 2 * I + 1], dtype=float)
+G = np.einsum('ikm, jlm->ijkl', c, g, dtype=float)
 
-G = G[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
-G = np.reshape(G, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+G = G[:2 * J + 1, :2 * K + 1, :2 * J + 1, :2 * K + 1]
+G = np.reshape(G, ((2 * J + 1) * (2 * K + 1), (2 * J + 1) * (2 * K + 1)))
 
 G_dual = np.linalg.pinv(G)
 # G_dual = np.reshape(G_dual, (21, 7, 21, 7))
@@ -167,10 +168,10 @@ G_dual = np.linalg.pinv(G)
 # print(G_dual[0,0,0,:])
 # %%
 
-# Apply dual Gram operator G^+ to obtain v_hat 
+# Apply dual Gram operator G^+ to obtain v_hat
 # Using quad integration
 v_hat = np.matmul(G_dual, v_hat_prime)
-v_hat = np.reshape(v_hat, (2*J+1, 2*K+1))
+v_hat = np.reshape(v_hat, (2 * J + 1, 2 * K + 1))
 
 # v_hat = np.einsum('ijkl, kl->ij', G_dual, v_hat_prime, dtype = float)
 # print(v_hat[1,:])
@@ -178,81 +179,87 @@ v_hat = np.reshape(v_hat, (2*J+1, 2*K+1))
 
 
 # Data points and corresponding vector field on the unit circle
-THETA_LST = list(np.arange(0, 2*np.pi, np.pi/(n/2)))
+THETA_LST = list(np.arange(0, 2 * np.pi, np.pi / (n / 2)))
 X_func = lambda theta: np.cos(theta)
 Y_func = lambda theta: np.sin(theta)
 TRAIN_X = np.array(X_func(THETA_LST))
 TRAIN_Y = np.array(Y_func(THETA_LST))
 
-TRAIN_V = np.empty([n, 4], dtype = float)
+TRAIN_V = np.empty([n, 4], dtype=float)
 for i in range(0, n):
-        TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
+    TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
 
 X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
 
-
 # Apply oushforward map to v_hat to obtain approximated vector fields
 # Using quad integration
-F_k = np.zeros([2, 2*I+1], dtype = float)
-F_k[1, 1] = 1/np.sqrt(2)
-F_k[0, 2] = 1/np.sqrt(2)
+F_k = np.zeros([2, 2 * I + 1], dtype=float)
+F_k[1, 1] = 1 / np.sqrt(2)
+F_k[0, 2] = 1 / np.sqrt(2)
 
-g = g[:(2*K+1), :, :]
-h_ajl = np.einsum('ak, jkl -> ajl', F_k, g, dtype = float)
+g = g[:(2 * K + 1), :, :]
+h_ajl = np.einsum('ak, jkl -> ajl', F_k, g, dtype=float)
 
-c = c[:(2*J+1), :, :]
-d_jlm = np.einsum('ij, ilm -> jlm', v_hat, c, dtype = float)
+c = c[:(2 * J + 1), :, :]
+d_jlm = np.einsum('ij, ilm -> jlm', v_hat, c, dtype=float)
 
-p_am = np.einsum('ajl, jlm -> am', h_ajl, d_jlm, dtype = float)
+p_am = np.einsum('ajl, jlm -> am', h_ajl, d_jlm, dtype=float)
 
+W_theta_x = np.zeros(n, dtype=float)
+W_theta_y = np.zeros(n, dtype=float)
+vector_approx = np.empty([n, 4], dtype=float)
 
-W_theta_x = np.zeros(n, dtype = float)
-W_theta_y = np.zeros(n, dtype = float)
-vector_approx = np.empty([n, 4], dtype = float)
 
 def eigenfunc_x(m):
-         return lambda x, y: p_am[0,0] if m == 0 else (p_am[0, m]*np.sqrt(2)*np.cos(m*np.angle(x+(1j)*y)/2) if ((m % 2) == 0 and m != 0) else p_am[0, m]*np.sqrt(2)*np.sin((m+1)*np.angle(x+(1j)*y)/2))
+    return lambda x, y: p_am[0, 0] if m == 0 else (
+        p_am[0, m] * np.sqrt(2) * np.cos(m * np.angle(x + (1j) * y) / 2) if ((m % 2) == 0 and m != 0) else p_am[
+                                                                                                               0, m] * np.sqrt(
+            2) * np.sin((m + 1) * np.angle(x + (1j) * y) / 2))
+
 
 def eigenfunc_y(m):
-         return lambda x, y: p_am[1,0] if m == 0 else (p_am[1, m]*np.sqrt(2)*np.cos(m*np.angle(x+(1j)*y)/2) if ((m % 2) == 0 and m != 0) else p_am[1, m]*np.sqrt(2)*np.sin((m+1)*np.angle(x+(1j)*y)/2))
+    return lambda x, y: p_am[1, 0] if m == 0 else (
+        p_am[1, m] * np.sqrt(2) * np.cos(m * np.angle(x + (1j) * y) / 2) if ((m % 2) == 0 and m != 0) else p_am[
+                                                                                                               1, m] * np.sqrt(
+            2) * np.sin((m + 1) * np.angle(x + (1j) * y) / 2))
+
 
 def W_x(args):
-            return lambda x, y: sum(eigenfunc_x(a)(x, y) for a in args)
+    return lambda x, y: sum(eigenfunc_x(a)(x, y) for a in args)
+
 
 def W_y(args):
-            return lambda x, y: sum(eigenfunc_y(a)(x, y) for a in args)
+    return lambda x, y: sum(eigenfunc_y(a)(x, y) for a in args)
+
 
 for i in range(0, n):
-            W_theta_x[i] = W_x(list(range(0,2*I+1)))(TRAIN_X[i], TRAIN_Y[i])
-            W_theta_y[i] = W_y(list(range(0,2*I+1)))(TRAIN_X[i], TRAIN_Y[i])
-            vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x[i], W_theta_y[i]])
+    W_theta_x[i] = W_x(list(range(0, 2 * I + 1)))(TRAIN_X[i], TRAIN_Y[i])
+    W_theta_y[i] = W_y(list(range(0, 2 * I + 1)))(TRAIN_X[i], TRAIN_Y[i])
+    vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x[i], W_theta_y[i]])
 print(W_theta_x)
 print(W_theta_y)
 
 X_2, Y_2, U_2, V_2 = zip(*vector_approx)
 
-
 plt.figure()
 ax = plt.gca()
-ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'black')
-ax.quiver(X_2, Y_2, U_2, V_2, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
-ax.set_xlim([-5,5])
-ax.set_ylim([-5,5])
+ax.quiver(X_1, Y_1, U_1, V_1, angles='xy', scale_units='xy', scale=0.3, color='black')
+ax.quiver(X_2, Y_2, U_2, V_2, angles='xy', scale_units='xy', scale=0.3, color='red')
+ax.set_xlim([-5, 5])
+ax.set_ylim([-5, 5])
 
-t = np.linspace(0, 2*np.pi, 100000)
-ax.plot(np.cos(t), np.sin(t), linewidth = 2.5, color = 'blue')
+t = np.linspace(0, 2 * np.pi, 100000)
+ax.plot(np.cos(t), np.sin(t), linewidth=2.5, color='blue')
 
 plt.draw()
 plt.show()
 
-
-plt.scatter(THETA_LST, -TRAIN_Y, color = 'black')
-plt.scatter(THETA_LST, W_theta_x, color = 'red')
+plt.scatter(THETA_LST, -TRAIN_Y, color='black')
+plt.scatter(THETA_LST, W_theta_x, color='red')
 plt.show()
 
-
-plt.scatter(THETA_LST, TRAIN_X, color = 'black')
-plt.scatter(THETA_LST, W_theta_y, color = 'red')
+plt.scatter(THETA_LST, TRAIN_X, color='black')
+plt.scatter(THETA_LST, W_theta_y, color='red')
 plt.show()
 
 # %%

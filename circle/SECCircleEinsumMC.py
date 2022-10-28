@@ -299,10 +299,19 @@ for i in range(0, 2*I+1):
 G_mc = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
 G_mc = np.einsum('ikm, jlm->ijkl', c_mc, g_mc, dtype = float)
 
+tau = -1.5
 G_mc = G_mc[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
+for i in range(0, 2*J+1):
+    for j in range(0, 2*K+1):
+        for k in range(0, 2*J+1):
+            for l in range(0, 2*K+1):
+                G_mc[i, j, k, l] = np.exp(-tau*lamb[j])*G_mc[i, j, k, l]*np.exp(-tau*lamb[l])
+
 G_mc = np.reshape(G_mc, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+print(np.amax(G_mc - G))
 
 G_dual_mc = np.linalg.pinv(G_mc)
+print(np.amax(G_dual_mc - G_dual))
 
 
 # Apply dual Gram operator G^+ to obtain v_hat 

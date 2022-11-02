@@ -34,13 +34,13 @@ def quad_l2_integral(f, a, b):
     return (1/(2*np.pi))*quad(f, a, b, limit = 100)[0]
     
 # (L2) Monte Carlo integration
-def monte_carlo_l2_integral(f, a = 0, b = 2*np.pi, N = 5000):
+def monte_carlo_l2_integral(f, a = 0, b = 2*np.pi, N = 10000):
     u = np.zeros(N)
-    subsets = np.arange(0, N+1, N/100)
-    for i in range(0, 100):
+    subsets = np.arange(0, N+1, N/5000)
+    for i in range(0, 5000):
         start = int(subsets[i])
         end = int(subsets[i+1])
-        u[start:end] = random.uniform(low = (i/100)*b, high = ((i+1)/100)*b, size = end - start)
+        u[start:end] = random.uniform(low = (i/5000)*b, high = ((i+1)/5000)*b, size = end - start)
     random.shuffle(u)
 
     integral = 0.0
@@ -290,14 +290,7 @@ for i in range(0, 2*I+1):
 G_mc = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
 G_mc = np.einsum('ikm, jlm->ijkl', c_mc, g_mc, dtype = float)
 
-tau = -0.5
 G_mc = G_mc[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
-for i in range(0, 2*J+1):
-    for j in range(0, 2*K+1):
-        for k in range(0, 2*J+1):
-            for l in range(0, 2*K+1):
-                G_mc[i, j, k, l] = np.exp(-tau*lamb[j])*G_mc[i, j, k, l]*np.exp(-tau*lamb[l])
-
 G_mc = np.reshape(G_mc, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 print(np.amax(G_mc - G))
 
@@ -351,8 +344,8 @@ X_3, Y_3, U_3, V_3 = zip(*vector_approx_mc)
 
 plt.figure()
 ax = plt.gca()
-# ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'black')
-ax.quiver(X_3, Y_3, U_3, V_3, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'green')
+ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'black')
+ax.quiver(X_3, Y_3, U_3, V_3, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'orange')
 ax.set_xlim([-5,5])
 ax.set_ylim([-5,5])
 

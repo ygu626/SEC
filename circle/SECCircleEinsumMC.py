@@ -2,10 +2,8 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-import multiprocessing as mp
-from itertools import product
+from numpy import random
 from scipy.integrate import quad
-from scipy import random
 from scipy.integrate import solve_ivp
 
 
@@ -18,16 +16,6 @@ K = 3
 
 # Number of data points
 n = 4 
-
-# Generate values for each parameter i, j, k
-i = range(2*I+1)
-j = range(2*J+1)
-k = range(2*K+1)
-
-# Generate two lists of tuples where each tuple is a combination of parameters.
-#The list will contain all possible combinations of parameters.
-paramlist_c = list(product(i, i, i))
-paramlist_v = list(product(j, k))
 
 
 # Double and triple products of functions
@@ -47,7 +35,7 @@ def quad_l2_integral(f, a, b):
     return (1/(2*np.pi))*quad(f, a, b, limit = 100)[0]
     
 # (L2) Monte Carlo integration
-def monte_carlo_l2_integral(f, a = 0, b = 2*np.pi, N = 10000):
+def monte_carlo_l2_integral(f, a = 0, b = 2*np.pi, N = 1000):
 
     u = np.zeros(N)
     for i in range(len(u)):
@@ -299,7 +287,7 @@ for i in range(0, 2*I+1):
 G_mc = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
 G_mc = np.einsum('ikm, jlm->ijkl', c_mc, g_mc, dtype = float)
 
-tau = -1.5
+tau = -0.8
 G_mc = G_mc[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
 for i in range(0, 2*J+1):
     for j in range(0, 2*K+1):
@@ -312,8 +300,9 @@ print(np.amax(G_mc - G))
 
 G_dual_mc = np.linalg.pinv(G_mc)
 print(np.amax(G_dual_mc - G_dual))
+# %%
 
-
+# %%
 # Apply dual Gram operator G^+ to obtain v_hat 
 # Using quad integration
 v_hat_mc = np.matmul(G_dual_mc, v_hat_prime_mc)

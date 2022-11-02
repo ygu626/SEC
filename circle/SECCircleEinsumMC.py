@@ -1,5 +1,4 @@
 # %%
-
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy import random
@@ -35,18 +34,22 @@ def quad_l2_integral(f, a, b):
     return (1/(2*np.pi))*quad(f, a, b, limit = 100)[0]
     
 # (L2) Monte Carlo integration
-def monte_carlo_l2_integral(f, a = 0, b = 2*np.pi, N = 1000):
-
+def monte_carlo_l2_integral(f, a = 0, b = 2*np.pi, N = 5000):
     u = np.zeros(N)
-    for i in range(len(u)):
-        u[i] = random.uniform(a, b)
-    
+    subsets = np.arange(0, N+1, N/100)
+    for i in range(0, 100):
+        start = int(subsets[i])
+        end = int(subsets[i+1])
+        u[start:end] = random.uniform(low = (i/100)*b, high = ((i+1)/100)*b, size = end - start)
+    random.shuffle(u)
+
     integral = 0.0
-    for i in u:
-        integral += (1/N)*f(i)
-    
+    for j in u:
+        integral += (1/N)*f(j)
+
     return integral
 
+# %%
 
 # Eigenvalues lambda_i
 lamb = np.empty(2*I+1, dtype = float)
@@ -287,7 +290,7 @@ for i in range(0, 2*I+1):
 G_mc = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
 G_mc = np.einsum('ikm, jlm->ijkl', c_mc, g_mc, dtype = float)
 
-tau = -0.8
+tau = -0.5
 G_mc = G_mc[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
 for i in range(0, 2*J+1):
     for j in range(0, 2*K+1):

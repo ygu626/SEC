@@ -319,16 +319,16 @@ def f_sec(t, y):
     return dydt
 
 
-# Define time spans and initial values for the true system
+# Define time spans and initial values for the SEC approximated system
 tspan = np.linspace(0, 10000, num=1000)
 yinit = [10, 24]
 
-# Solve ODE under the true system
+# Solve ODE under the SEC approximated system
 sol_sec = solve_ivp(lambda t, y: f_sec(t, y),
                     [tspan[0], tspan[-1]], yinit, t_eval=tspan, rtol=1e-5)
 
 # %%
-# Plot solutions to the true system
+# Plot solutions to the SEC approximated system
 plt.figure(figsize=(8, 8))
 plt.plot(sol_sec.y.T[:, 0], sol_sec.y.T[:, 1])
 

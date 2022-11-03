@@ -1,7 +1,8 @@
+# %%
 import matplotlib.pyplot as plt
 import numpy as np
-import multiprocessing as mp
-from multiprocessing import set_start_method
+import multiprocess as mp
+import itertools
 from scipy.integrate import quad
 from scipy.integrate import solve_ivp
 from numpy import random
@@ -98,35 +99,32 @@ dphis = [dphi_basis(i) for i in range(2 * I + 1)]
 # Using multiprocessing to reduce runtimes of nested for loops
 # Apply analysis operator T to obtain v_hat_prime
 # Using quad integration
+p = mp.Pool()
+
 def v_hat_prime_func(i, j):
     return quad_l2_integral(double_prod(phis[i], dphis[j]), 0, 2 * np.pi)
 
-
-if __name__ == '__main__':
-    set_start_method('fork')
-    with mp.Pool() as pool:
-        v_hat_prime = pool.starmap(v_hat_prime_func,
-                                   [(i, j) for i in range(0, 2 * J + 1)
-                                    for j in range(0, 2 * K + 1)])
+v_hat_prime = p.starmap(v_hat_prime_func, 
+                        [(i, j) for i in range(0, 2 * J + 1)
+                         for j in range(0, 2 * K + 1)])
+            
+v_hat_prime = np.reshape(np.array(v_hat_prime), ((2*J+1)*(2*K+1), 1))
 
 
 # Compute c_ijk coefficients
 # Using Quad integration
+p = mp.Pool()
+
 def c_func(i, j, k):
     return quad_l2_integral(triple_prod(phis[i], phis[j], phis[k]), 0, 2 * np.pi)
 
+c = p.starmap(c_func, 
+              [(i, j, k) for i in range(0, 2 * I + 1)
+                for j in range(0, 2 * I + 1)
+                for k in range(0, 2 * I + 1)])
+            
+c = np.reshape(np.array(c), (2 * I + 1, 2 * I + 1, 2 * I + 1))
 
-if __name__ == '__main__':
-    with mp.Pool() as pool:
-        c = pool.starmap(c_func,
-                         [(i, j, k) for i in range(0, 2 * I + 1)
-                          for j in range(0, 2 * I + 1)
-                          for k in range(0, 2 * I + 1)])
-        c = np.reshape(c, (2 * I + 1, 2 * I + 1, 2 * I + 1))
-
-# print(np.isnan(c).any())
-# print(np.isinf(c).any())
-# %%
 
 # Compute g_kij Riemannian metric coefficients
 # Using quad integration
@@ -368,114 +366,5 @@ ax2.plot(sol_true.t, sol_true.y.T[:, 1], color='red')
 ax2.plot(sol_sec.t, sol_sec.y.T[:, 1], color='blue')
 ax2.set_title('y-coordinates prediction w.r.t. time t (true = red, SEC = blue)')
 
-plt.show()
-# %%
-
-
-# %%
-# MONTE CARLO SECTION
-
-# Apply analysis operator T to obtain v_hat_prime
-# Using Monte Carlo integration
-v_hat_prime_mc = np.empty([2*J+1, 2*K+1], dtype = float)
-
-for i in range(0, 2*J+1):
-    for j in range(0, 2*K+1):
-        f = double_prod(phis[i], dphis[j])
-        v_hat_prime_mc[i, j] = monte_carlo_l2_integral(f)
-
-v_hat_prime_mc = np.reshape(v_hat_prime_mc, ((2*J+1)*(2*K+1), 1))
-
-# print(np.amax(v_hat_prime - v_hat_prime_mc))
-
-
-# Compute c_ijk coefficients
-# Using Monte Carlo integration
-c_mc = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
-for i in range(0, 2*I+1):
-    for j in range(0, 2*I+1):
-        for k in range(0, 2*I+1):
-            f = triple_prod(phis[i], phis[j], phis[k])
-            c_mc[i, j, k] = monte_carlo_l2_integral(f)
-
-# print(np.amax(c - c_mc))
-
-
-# %%
-# Compute g_kij Riemannian metric coefficients
-# Using Monte Carlo integration
-g_mc = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
-for i in range(0, 2*I+1):
-            for j in range(0, 2*I+1):
-                        for k in range(0, 2*I+1):
-                                    g_mc[i,j,k] = (lamb[i] + lamb[j] - lamb[k])*c_mc[i,j,k]/2
-
-
-# Compute G_ijkl entries for the Gram operator and its dual
-# Using Monte Carlo integration
-G_mc = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
-G_mc = np.einsum('ikm, jlm->ijkl', c_mc, g_mc, dtype = float)
-
-G_mc = G_mc[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
-G_mc = np.reshape(G_mc, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
-
-G_dual_mc = np.linalg.pinv(G_mc)
-
-
-# Apply dual Gram operator G^+ to obtain v_hat 
-# Using quad integration
-v_hat_mc = np.matmul(G_dual_mc, v_hat_prime_mc)
-v_hat_mc = np.reshape(v_hat_mc, (2*J+1, 2*K+1))
-
-
-# %%
-# Apply oushforward map to v_hat to obtain approximated vector fields
-# Using Monte Carlo integration
-g_mc = g_mc[:(2*K+1), :, :]
-h_ajl_mc = np.einsum('ak, jkl -> ajl', F_k, g_mc, dtype = float)
-
-c_mc = c_mc[:(2*J+1), :, :]
-d_jlm_mc = np.einsum('ij, ilm -> jlm', v_hat_mc, c_mc, dtype = float)
-
-p_am_mc = np.einsum('ajl, jlm -> am', h_ajl_mc, d_jlm_mc, dtype = float)
-
-
-W_theta_x_mc = np.zeros(n, dtype = float)
-W_theta_y_mc = np.zeros(n, dtype = float)
-vector_approx_mc = np.empty([n, 4], dtype = float)
-
-def eigenfunc_x_mc(m):
-         return lambda x, y: p_am_mc[0,0] if m == 0 else (p_am_mc[0, m]*np.sqrt(2)*np.cos(m*np.angle(x+(1j)*y)/2) if ((m % 2) == 0 and m != 0) else p_am_mc[0, m]*np.sqrt(2)*np.sin((m+1)*np.angle(x+(1j)*y)/2))
-
-def eigenfunc_y_mc(m):
-         return lambda x, y: p_am_mc[1,0] if m == 0 else (p_am_mc[1, m]*np.sqrt(2)*np.cos(m*np.angle(x+(1j)*y)/2) if ((m % 2) == 0 and m != 0) else p_am_mc[1, m]*np.sqrt(2)*np.sin((m+1)*np.angle(x+(1j)*y)/2))
-
-def W_x_mc(args):
-            return lambda x, y: sum(eigenfunc_x_mc(a)(x, y) for a in args)
-
-def W_y_mc(args):
-            return lambda x, y: sum(eigenfunc_y_mc(a)(x, y) for a in args)
-
-for i in range(0, n):
-            W_theta_x_mc[i] = W_x_mc(list(range(0,2*I+1)))(TRAIN_X[i], TRAIN_Y[i])
-            W_theta_y_mc[i] = W_y_mc(list(range(0,2*I+1)))(TRAIN_X[i], TRAIN_Y[i])
-            vector_approx_mc[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x_mc[i], W_theta_y_mc[i]])
-print(W_theta_x_mc)
-print(W_theta_y_mc)
-
-X_3, Y_3, U_3, V_3 = zip(*vector_approx_mc)
-
-
-plt.figure()
-ax = plt.gca()
-# ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'black')
-ax.quiver(X_3, Y_3, U_3, V_3, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'green')
-ax.set_xlim([-5,5])
-ax.set_ylim([-5,5])
-
-t = np.linspace(0, 2*np.pi, 100000)
-ax.plot(np.cos(t), np.sin(t), linewidth = 2.5, color = 'blue')
-
-plt.draw()
 plt.show()
 # %%

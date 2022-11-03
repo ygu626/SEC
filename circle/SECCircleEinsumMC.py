@@ -52,7 +52,6 @@ def monte_carlo_l2_integral(f, a = 0, b = 2*np.pi, N = 5000):
 
     return integral
 
-# %%
 
 # Eigenvalues lambda_i
 lamb = np.empty(2*I+1, dtype = float)

@@ -2,12 +2,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy import random
-from numba import jit, prange
+import multiprocess as mp
 from scipy.integrate import quad
 from scipy.integrate import solve_ivp
 
-
-jit(nopython = True, parallel = True)
 
 # number of non-constant eigenform pairs
 L = 10    
@@ -37,13 +35,13 @@ def quad_l2_integral(f, a, b):
     return (1/(2*np.pi))*quad(f, a, b, limit = 100)[0]
     
 # (L2) Monte Carlo integration
-def monte_carlo_l2_integral(f, a = 0, b = 2*np.pi, N = 5000):
+def monte_carlo_l2_integral(f, a = 0, b = 2*np.pi, N = 10000):
     u = np.zeros(N)
-    subsets = np.arange(0, N+1, N/1000)
-    for i in prange(0, 1000):
+    subsets = np.arange(0, N+1, N/2000)
+    for i in range(0, 2000):
         start = int(subsets[i])
         end = int(subsets[i+1])
-        u[start:end] = random.uniform(low = (i/1000)*b, high = ((i+1)/1000)*b, size = end - start)
+        u[start:end] = random.uniform(low = (i/2000)*b, high = ((i+1)/2000)*b, size = end - start)
     random.shuffle(u)
 
     integral = 0.0
@@ -110,39 +108,42 @@ for i in range(0, n):
 X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
 
 
-# %%
-# MONTE CARLO SECTION
-
 # Apply analysis operator T to obtain v_hat_prime
 # Using Monte Carlo integration
-v_hat_prime_mc = np.empty([2*J+1, 2*K+1], dtype = float)
+p = mp.Pool()
 
-for i in prange(0, 2*J+1):
-    for j in prange(0, 2*K+1):
-        f = double_prod(phis[i], dphis[j])
-        v_hat_prime_mc[i, j] = monte_carlo_l2_integral(f)
+def v_hat_prime_func_mc(i, j):
+    return monte_carlo_l2_integral(double_prod(phis[i], dphis[j]))
 
-v_hat_prime_mc = np.reshape(v_hat_prime_mc, ((2*J+1)*(2*K+1), 1))
+v_hat_prime_mc = p.starmap(v_hat_prime_func_mc, 
+                        [(i, j) for i in range(0, 2 * J + 1)
+                         for j in range(0, 2 * K + 1)])
+            
+v_hat_prime_mc = np.reshape(np.array(v_hat_prime_mc), ((2*J+1)*(2*K+1), 1))
 
 
 # Compute c_ijk coefficients
 # Using Monte Carlo integration
-c_mc = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
-for i in prange(0, 2*I+1):
-    for j in prange(0, 2*I+1):
-        for k in prange(0, 2*I+1):
-            f = triple_prod(phis[i], phis[j], phis[k])
-            c_mc[i, j, k] = monte_carlo_l2_integral(f)
+p = mp.Pool()
 
+def c_func_mc(i, j, k):
+    return monte_carlo_l2_integral(triple_prod(phis[i], phis[j], phis[k]))
 
+c_mc = p.starmap(c_func_mc, 
+              [(i, j, k) for i in range(0, 2 * I + 1)
+                for j in range(0, 2 * I + 1)
+                for k in range(0, 2 * I + 1)])
+            
+c_mc = np.reshape(np.array(c_mc), (2 * I + 1, 2 * I + 1, 2 * I + 1))
 # %%
+
 
 # Compute g_kij Riemannian metric coefficients
 # Using Monte Carlo integration
 g_mc = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
-for i in prange(0, 2*I+1):
-            for j in prange(0, 2*I+1):
-                        for k in prange(0, 2*I+1):
+for i in range(0, 2*I+1):
+            for j in range(0, 2*I+1):
+                        for k in range(0, 2*I+1):
                                     g_mc[i,j,k] = (lamb[i] + lamb[j] - lamb[k])*c_mc[i,j,k]/2
 
 

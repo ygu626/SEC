@@ -35,13 +35,13 @@ def quad_l2_integral(f, a, b):
     return (1/(2*np.pi))*quad(f, a, b, limit = 100)[0]
     
 # (L2) Monte Carlo integration
-def monte_carlo_l2_integral(f, a = 0, b = 2*np.pi, N = 50000):
+def monte_carlo_l2_integral(f, a = 0, b = 2*np.pi, N = 800):
     u = np.zeros(N)
-    subsets = np.arange(0, N+1, N/10000)
-    for i in range(0, 10000):
+    subsets = np.arange(0, N+1, N/400)
+    for i in range(0, 400):
         start = int(subsets[i])
         end = int(subsets[i+1])
-        u[start:end] = random.uniform(low = (i/10000)*b, high = ((i+1)/10000)*b, size = end - start)
+        u[start:end] = random.uniform(low = (i/400)*b, high = ((i+1)/400)*b, size = end - start)
     random.shuffle(u)
 
     integral = 0.0
@@ -163,7 +163,7 @@ G_mc = G_mc[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
 #                G_mc[i, j, k, l] = np.exp(-tau*lamb[j])*G_mc[i, j, k, l]*np.exp(-tau*lamb[l])
 
 G_mc = np.reshape(G_mc, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
-G_dual_mc = np.linalg.pinv(G_mc)
+G_dual_mc = np.linalg.pinv(G_mc, rcond=(np.amax(lamb)*1e-4))
 
 
 # Apply dual Gram operator G^+ to obtain v_hat 

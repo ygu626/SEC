@@ -153,26 +153,36 @@ G_mc = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
 G_mc = np.einsum('ikm, jlm->ijkl', c_mc, g_mc, dtype = float)
 
 G_mc = G_mc[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
-
+G_mc_weighted = np.zeros([2*J+1, 2*K+1, 2*J+1, 2*K+1], dtype = float)
 # Add in weighted frame elements
-# tau = -0.5
-# for i in range(0, 2*J+1):
-#    for j in range(0, 2*K+1):
-#        for k in range(0, 2*J+1):
-#            for l in range(0, 2*K+1):
-#                G_mc[i, j, k, l] = np.exp(-tau*lamb[j])*G_mc[i, j, k, l]*np.exp(-tau*lamb[l])
+tau = 0.2
+for i in range(0, 2*J+1):
+    for j in range(0, 2*K+1):
+               for k in range(0, 2*J+1):
+                           for l in range(0, 2*K+1):
+                                G_mc_weighted[i, j, k, l] = np.exp(-tau*(lamb[j]+lamb[l]))*G_mc[i, j, k, l]
 
-G_mc = np.reshape(G_mc, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
-G_dual_mc = np.linalg.pinv(G_mc, rcond=(np.amax(lamb)*1e-4))
+G_mc_weighted = np.reshape(G_mc_weighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
+G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-4))
+
+
+G_dual_mc = np.reshape(G_dual_mc, (2*J+1, 2*K+1, 2*J+1, 2*K+1))
+G_dual_mc_unweighted = np.zeros([2*J+1, 2*K+1, 2*J+1, 2*K+1], dtype = float)
+for i in range(0, 2*J+1):
+    for j in range(0, 2*K+1):
+               for k in range(0, 2*J+1):
+                           for l in range(0, 2*K+1):
+                                G_dual_mc_unweighted[i, j, k, l] = np.exp(tau*(lamb[j]+lamb[l]))*G_dual_mc[i, j, k, l]
+
+G_dual_mc_unweighted = np.reshape(G_dual_mc_unweighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
 # Apply dual Gram operator G^+ to obtain v_hat 
 # Using quad integration
-v_hat_mc = np.matmul(G_dual_mc, v_hat_prime_mc)
+v_hat_mc = np.matmul(G_dual_mc_unweighted, v_hat_prime_mc)
 v_hat_mc = np.reshape(v_hat_mc, (2*J+1, 2*K+1))
-
-
 # %%
+
 # Apply oushforward map to v_hat to obtain approximated vector fields
 # Using Monte Carlo integration
 F_k = np.zeros([2, 2*I+1], dtype = float)

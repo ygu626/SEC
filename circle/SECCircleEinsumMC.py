@@ -107,6 +107,8 @@ for i in range(0, n):
 
 X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
 
+print(U_1)
+print(V_1)
 
 # Apply analysis operator T to obtain v_hat_prime
 # Using Monte Carlo integration
@@ -153,33 +155,37 @@ G_mc = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
 G_mc = np.einsum('ikm, jlm->ijkl', c_mc, g_mc, dtype = float)
 
 G_mc = G_mc[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
-G_mc_weighted = np.zeros([2*J+1, 2*K+1, 2*J+1, 2*K+1], dtype = float)
+G_mc = np.reshape(G_mc, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+G_dual_mc = np.linalg.pinv(G_mc, rcond = (np.amax(lamb)*1e-3))
+
+
 # Add in weighted frame elements
-tau = 0.2
-for i in range(0, 2*J+1):
-    for j in range(0, 2*K+1):
-               for k in range(0, 2*J+1):
-                           for l in range(0, 2*K+1):
-                                G_mc_weighted[i, j, k, l] = np.exp(-tau*(lamb[j]+lamb[l]))*G_mc[i, j, k, l]
+# tau = 0.2
+# for i in range(0, 2*J+1):
+#     for j in range(0, 2*K+1):
+#                for k in range(0, 2*J+1):
+#                            for l in range(0, 2*K+1):
+#                                 G_mc_weighted[i, j, k, l] = np.exp(-tau*(lamb[j]+lamb[l]))*G_mc[i, j, k, l]
 
-G_mc_weighted = np.reshape(G_mc_weighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+# G_mc_weighted = np.reshape(G_mc_weighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
-G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-4))
+# G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-4))
 
 
-G_dual_mc = np.reshape(G_dual_mc, (2*J+1, 2*K+1, 2*J+1, 2*K+1))
-G_dual_mc_unweighted = np.zeros([2*J+1, 2*K+1, 2*J+1, 2*K+1], dtype = float)
-for i in range(0, 2*J+1):
-    for j in range(0, 2*K+1):
-               for k in range(0, 2*J+1):
-                           for l in range(0, 2*K+1):
-                                G_dual_mc_unweighted[i, j, k, l] = np.exp(tau*(lamb[j]+lamb[l]))*G_dual_mc[i, j, k, l]
+# G_dual_mc = np.reshape(G_dual_mc, (2*J+1, 2*K+1, 2*J+1, 2*K+1))
+# G_dual_mc_unweighted = np.zeros([2*J+1, 2*K+1, 2*J+1, 2*K+1], dtype = float)
+# for i in range(0, 2*J+1):
+#     for j in range(0, 2*K+1):
+#                for k in range(0, 2*J+1):
+#                            for l in range(0, 2*K+1):
+#                                 G_dual_mc_unweighted[i, j, k, l] = np.exp(tau*(lamb[j]+lamb[l]))*G_dual_mc[i, j, k, l]
 
-G_dual_mc_unweighted = np.reshape(G_dual_mc_unweighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+# G_dual_mc_unweighted = np.reshape(G_dual_mc_unweighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+
 
 # Apply dual Gram operator G^+ to obtain v_hat 
 # Using quad integration
-v_hat_mc = np.matmul(G_dual_mc_unweighted, v_hat_prime_mc)
+v_hat_mc = np.matmul(G_dual_mc, v_hat_prime_mc)
 v_hat_mc = np.reshape(v_hat_mc, (2*J+1, 2*K+1))
 # %%
 
@@ -316,7 +322,6 @@ sidefig.suptitle('Solutions to ODE under the SEC approximated system')
 ax1.plot(sol_sec_mc.t, sol_sec_mc.y.T)
 ax1.set_title('x- & y-coordinates prediction w.r.t. time t')
 
-ax2.plot(sol_true.t, sol_true.y.T[:, 0], color='black')
 ax2.plot(sol_sec_mc.t, sol_sec_mc.y.T[:, 0], color='black')
 ax2.set_title('x-coordinates prediction w.r.t. time t')
 

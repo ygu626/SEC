@@ -17,6 +17,8 @@ K = 3
 # Number of data points
 n = 4 
 
+# Weight oaraneter
+tau = 0.5
 
 # Double and triple products of functions
 def double_prod(f, g):
@@ -115,7 +117,7 @@ print(V_1)
 p = mp.Pool()
 
 def v_hat_prime_func_mc(i, j):
-    return monte_carlo_l2_integral(double_prod(phis[i], dphis[j]))
+    return np.exp(-tau*j)*monte_carlo_l2_integral(double_prod(phis[i], dphis[j]))
 
 v_hat_prime_mc = p.starmap(v_hat_prime_func_mc, 
                         [(i, j) for i in range(0, 2 * J + 1)
@@ -155,33 +157,22 @@ G_mc = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
 G_mc = np.einsum('ikm, jlm->ijkl', c_mc, g_mc, dtype = float)
 
 G_mc = G_mc[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
-G_mc = np.reshape(G_mc, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
-G_dual_mc = np.linalg.pinv(G_mc, rcond = (np.amax(lamb)*1e-3))
+# G_mc = np.reshape(G_mc, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+# G_dual_mc = np.linalg.pinv(G_mc, rcond = (np.amax(lamb)*1e-3))
 
 
 # Add in weighted frame elements
-# tau = 0.2
-# for i in range(0, 2*J+1):
-#     for j in range(0, 2*K+1):
-#                for k in range(0, 2*J+1):
-#                            for l in range(0, 2*K+1):
-#                                 G_mc_weighted[i, j, k, l] = np.exp(-tau*(lamb[j]+lamb[l]))*G_mc[i, j, k, l]
+G_mc_weighted = np.zeros([2*J+1, 2*K+1, 2*J+1, 2*K+1], dtype = float)
 
-# G_mc_weighted = np.reshape(G_mc_weighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+for i in range(0, 2*J+1):
+    for j in range(0, 2*K+1):
+               for k in range(0, 2*J+1):
+                           for l in range(0, 2*K+1):
+                                G_mc_weighted[i, j, k, l] = np.exp(-tau*(lamb[j]+lamb[l]))*G_mc[i, j, k, l]
 
-# G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-4))
+G_mc_weighted = np.reshape(G_mc_weighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
-
-# G_dual_mc = np.reshape(G_dual_mc, (2*J+1, 2*K+1, 2*J+1, 2*K+1))
-# G_dual_mc_unweighted = np.zeros([2*J+1, 2*K+1, 2*J+1, 2*K+1], dtype = float)
-# for i in range(0, 2*J+1):
-#     for j in range(0, 2*K+1):
-#                for k in range(0, 2*J+1):
-#                            for l in range(0, 2*K+1):
-#                                 G_dual_mc_unweighted[i, j, k, l] = np.exp(tau*(lamb[j]+lamb[l]))*G_dual_mc[i, j, k, l]
-
-# G_dual_mc_unweighted = np.reshape(G_dual_mc_unweighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
-
+G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-3))
 
 # Apply dual Gram operator G^+ to obtain v_hat 
 # Using quad integration
@@ -196,7 +187,12 @@ F_k[1, 1] = 1/np.sqrt(2)
 F_k[0, 2] = 1/np.sqrt(2)
 
 g_mc = g_mc[:(2*K+1), :, :]
-h_ajl_mc = np.einsum('ak, jkl -> ajl', F_k, g_mc, dtype = float)
+
+g_mc_weighted = np.zeros([2*K+1, 2*I+1, 2*I+1], dtype = float)
+for j in range(0, 2*K+1):
+    g_mc_weighted[j, :, :] = np.exp(-tau*j)*g_mc[j, :, :]
+
+h_ajl_mc = np.einsum('ak, jkl -> ajl', F_k, g_mc_weighted, dtype = float)
 
 c_mc = c_mc[:(2*J+1), :, :]
 d_jlm_mc = np.einsum('ij, ilm -> jlm', v_hat_mc, c_mc, dtype = float)

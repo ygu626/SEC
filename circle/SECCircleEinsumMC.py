@@ -15,10 +15,10 @@ J = 10
 K = 3
 
 # Number of data points
-n = 4 
+n = 8 
 
 # Weight oaraneter
-tau = 0.5
+tau = 0.28
 
 # Double and triple products of functions
 def double_prod(f, g):

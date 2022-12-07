@@ -7,7 +7,7 @@ from scipy.integrate import quad
 from scipy.integrate import solve_ivp
 
 
-# number of non-constant eigenform pairs
+# Number of non-constant eigenform pairs
 I = 10
 J = 10
 K = 3

@@ -111,34 +111,34 @@ print(U_1)
 print(V_1)
 
 
-# Compute c_ijk coefficients
+# Compute c_ijp coefficients
 # Using Monte Carlo integration
-p = mp.Pool()
+pool = mp.Pool()
 
-def c_func_mc(i, j, k):
-    return monte_carlo_l2_integral(triple_prod(phis[i], phis[j], phis[k]))
+def c_func_mc(i, j, p):
+    return monte_carlo_l2_integral(triple_prod(phis[i], phis[j], phis[p]))
 
-c_mc = p.starmap(c_func_mc, 
-              [(i, j, k) for i in range(0, 2 * I + 1)
+c_mc = pool.starmap(c_func_mc, 
+              [(i, j, p) for i in range(0, 2 * I + 1)
                 for j in range(0, 2 * I + 1)
-                for k in range(0, 2 * I + 1)])
+                for p in range(0, 2 * I + 1)])
             
 c_mc = np.reshape(np.array(c_mc), (2 * I + 1, 2 * I + 1, 2 * I + 1))
 
 
-# Compute g_kij Riemannian metric coefficients
+# Compute g_ijp Riemannian metric coefficients
 # Using Monte Carlo integration
 g_mc = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
 for i in range(0, 2*I+1):
             for j in range(0, 2*I+1):
-                        for k in range(0, 2*I+1):
-                                    g_mc[i,j,k] = (lamb[i] + lamb[j] - lamb[k])*c_mc[i,j,k]/2
+                        for p in range(0, 2*I+1):
+                                    g_mc[i,j,p] = (lamb[i] + lamb[j] - lamb[p])*c_mc[i,j,p]/2
 
 
 # Compute G_ijkl entries for the Gram operator and its dual
 # Using Monte Carlo integration
 G_mc = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
-G_mc = np.einsum('ikm, jlm->ijkl', c_mc, g_mc, dtype = float)
+G_mc = np.einsum('ipm, jqm->ijpq', c_mc, g_mc, dtype = float)
 
 G_mc = G_mc[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
 # G_mc = np.reshape(G_mc, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
@@ -150,9 +150,9 @@ G_mc_weighted = np.zeros([2*J+1, 2*K+1, 2*J+1, 2*K+1], dtype = float)
 
 for i in range(0, 2*J+1):
     for j in range(0, 2*K+1):
-               for k in range(0, 2*J+1):
-                           for l in range(0, 2*K+1):
-                                G_mc_weighted[i, j, k, l] = np.exp(-tau*(lamb[j]+lamb[l]))*G_mc[i, j, k, l]
+               for p in range(0, 2*J+1):
+                           for q in range(0, 2*K+1):
+                                G_mc_weighted[i, j, p, q] = np.exp(-tau*(lamb[j]+lamb[q]))*G_mc[i, j, p, q]
 
 G_mc_weighted = np.reshape(G_mc_weighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
@@ -161,12 +161,12 @@ G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-3))
 
 # Apply analysis operator T to obtain v_hat_prime
 # Using Monte Carlo integration with weights
-p = mp.Pool()
+pool = mp.Pool()
 
 def v_hat_prime_func_mc(i, j):
     return np.exp(-tau*lamb[j])*monte_carlo_l2_integral(double_prod(phis[i], dphis[j]))
 
-v_hat_prime_mc = p.starmap(v_hat_prime_func_mc, 
+v_hat_prime_mc = pool.starmap(v_hat_prime_func_mc, 
                         [(i, j) for i in range(0, 2 * J + 1)
                          for j in range(0, 2 * K + 1)])
             

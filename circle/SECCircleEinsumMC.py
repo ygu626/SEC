@@ -34,7 +34,7 @@ def triple_prod(f, g, h):
 def quad_l2_integral(f, a, b):
     return (1/(2*np.pi))*quad(f, a, b, limit = 100)[0]
     
-# (L2) Monte Carlo integration
+# (L2) Deterministic Monte Carlo integration
 def monte_carlo_l2_integral(f, a = 0, b = 2*np.pi, N = 800):
     u = np.zeros(N)
     subsets = np.arange(0, N+1, N/400)
@@ -110,19 +110,6 @@ X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
 print(U_1)
 print(V_1)
 
-# Apply analysis operator T to obtain v_hat_prime
-# Using Monte Carlo integration
-p = mp.Pool()
-
-def v_hat_prime_func_mc(i, j):
-    return np.exp(-tau*lamb[j])*monte_carlo_l2_integral(double_prod(phis[i], dphis[j]))
-
-v_hat_prime_mc = p.starmap(v_hat_prime_func_mc, 
-                        [(i, j) for i in range(0, 2 * J + 1)
-                         for j in range(0, 2 * K + 1)])
-            
-v_hat_prime_mc = np.reshape(np.array(v_hat_prime_mc), ((2*J+1)*(2*K+1), 1))
-
 
 # Compute c_ijk coefficients
 # Using Monte Carlo integration
@@ -171,6 +158,21 @@ G_mc_weighted = np.reshape(G_mc_weighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
 G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-3))
 
+
+# Apply analysis operator T to obtain v_hat_prime
+# Using Monte Carlo integration with weights
+p = mp.Pool()
+
+def v_hat_prime_func_mc(i, j):
+    return np.exp(-tau*lamb[j])*monte_carlo_l2_integral(double_prod(phis[i], dphis[j]))
+
+v_hat_prime_mc = p.starmap(v_hat_prime_func_mc, 
+                        [(i, j) for i in range(0, 2 * J + 1)
+                         for j in range(0, 2 * K + 1)])
+            
+v_hat_prime_mc = np.reshape(np.array(v_hat_prime_mc), ((2*J+1)*(2*K+1), 1))
+
+
 # Apply dual Gram operator G^+ to obtain v_hat 
 # Using quad integration
 v_hat_mc = np.matmul(G_dual_mc, v_hat_prime_mc)
@@ -178,7 +180,7 @@ v_hat_mc = np.reshape(v_hat_mc, (2*J+1, 2*K+1))
 
 
 # Apply oushforward map to v_hat to obtain approximated vector fields
-# Using Monte Carlo integration
+# Using Monte Carlo integration with weights
 F_k = np.zeros([2, 2*I+1], dtype = float)
 F_k[1, 1] = 1/np.sqrt(2)
 F_k[0, 2] = 1/np.sqrt(2)

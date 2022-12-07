@@ -1,4 +1,11 @@
 # %%
+import matplotlib.pyplot as plt
+import numpy as np
+from numpy import random
+import multiprocess as mp
+from scipy.integrate import quad
+from scipy.integrate import solve_ivp
+
 # Number of non-constant eigenform pairs
 I = 10
 J = 10

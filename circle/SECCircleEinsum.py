@@ -1,21 +1,14 @@
 # %%
-import matplotlib.pyplot as plt
-import numpy as np
-import multiprocess as mp
-import itertools
-from scipy.integrate import quad
-from scipy.integrate import solve_ivp
-from numpy import random
-
-# number of non-constant eigenform pairs
-L = 10
-
-I = 25
+# Number of non-constant eigenform pairs
+I = 10
 J = 10
 K = 3
 
 # Number of data points
-n = 20
+n = 8
+
+# Weight oaraneter
+tau = 0.28
 
 
 # Double and triple products of functions
@@ -96,13 +89,30 @@ def dphi_basis(i):
 dphis = [dphi_basis(i) for i in range(2 * I + 1)]
 
 
+# Data points and corresponding vector field on the unit circle
+THETA_LST = list(np.arange(0, 2*np.pi, np.pi/(n/2)))
+X_func = lambda theta: np.cos(theta)
+Y_func = lambda theta: np.sin(theta)
+TRAIN_X = np.array(X_func(THETA_LST))
+TRAIN_Y = np.array(Y_func(THETA_LST))
+
+TRAIN_V = np.empty([n, 4], dtype = float)
+for i in range(0, n):
+        TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
+
+X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
+
+print(U_1)
+print(V_1)
+
+
 # Using multiprocessing to reduce runtimes of nested for loops
 # Apply analysis operator T to obtain v_hat_prime
 # Using quad integration
 p = mp.Pool()
 
 def v_hat_prime_func(i, j):
-    return quad_l2_integral(double_prod(phis[i], dphis[j]), 0, 2 * np.pi)
+    return np.exp(-tau*lamb[j])*quad_l2_integral(double_prod(phis[i], dphis[j]), 0, 2 * np.pi)
 
 v_hat_prime = p.starmap(v_hat_prime_func, 
                         [(i, j) for i in range(0, 2 * J + 1)
@@ -139,11 +149,11 @@ for i in range(0, 2 * I + 1):
 # print(np.isinf(g).any())
 
 
-c_new = np.empty([2 * I + 1, 2 * I + 1, 2 * I + 1], dtype=float)
-for j in range(0, 2 * I + 1):
-    for l in range(0, 2 * I + 1):
-        for m in range(0, 2 * I + 1):
-            c_new[j, l, m] = (1 / 2) * (lamb[j] + lamb[l] - lamb[m]) * c[j, l, m]
+# c_new = np.empty([2 * I + 1, 2 * I + 1, 2 * I + 1], dtype=float)
+# for j in range(0, 2 * I + 1):
+#     for l in range(0, 2 * I + 1):
+#         for m in range(0, 2 * I + 1):
+#             c_new[j, l, m] = (1 / 2) * (lamb[j] + lamb[l] - lamb[m]) * c[j, l, m]
 
 # G_new = np.einsum('ikm, jlm -> ijkl', c, c_new, dtype = float)
 # G_new = G_new[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
@@ -156,16 +166,30 @@ G = np.zeros([2 * I + 1, 2 * I + 1, 2 * I + 1, 2 * I + 1], dtype=float)
 G = np.einsum('ikm, jlm->ijkl', c, g, dtype=float)
 
 G = G[:2 * J + 1, :2 * K + 1, :2 * J + 1, :2 * K + 1]
-G = np.reshape(G, ((2 * J + 1) * (2 * K + 1), (2 * J + 1) * (2 * K + 1)))
 
-G_dual = np.linalg.pinv(G)
+
+# Add in weighted frame elements
+G_weighted = np.zeros([2*J+1, 2*K+1, 2*J+1, 2*K+1], dtype = float)
+
+for i in range(0, 2*J+1):
+    for j in range(0, 2*K+1):
+               for k in range(0, 2*J+1):
+                           for l in range(0, 2*K+1):
+                                G_weighted[i, j, k, l] = np.exp(-tau*(lamb[j]+lamb[l]))*G[i, j, k, l]
+
+G_weighted = np.reshape(G_weighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+
+G_dual = np.linalg.pinv(G_weighted, rcond = (np.amax(lamb)*1e-3))
+
+
+# G_dual = np.linalg.pinv(G)
 # G_dual = np.reshape(G_dual, (21, 7, 21, 7))
 
 # print(G[2,:])
 # print(np.isnan(G).any())
 # print(np.isinf(G).any())
 # print(G_dual[0,0,0,:])
-# %%
+
 
 # Apply dual Gram operator G^+ to obtain v_hat
 # Using quad integration
@@ -174,21 +198,7 @@ v_hat = np.reshape(v_hat, (2 * J + 1, 2 * K + 1))
 
 # v_hat = np.einsum('ijkl, kl->ij', G_dual, v_hat_prime, dtype = float)
 # print(v_hat[1,:])
-# %%
 
-
-# Data points and corresponding vector field on the unit circle
-THETA_LST = list(np.arange(0, 2 * np.pi, np.pi / (n / 2)))
-X_func = lambda theta: np.cos(theta)
-Y_func = lambda theta: np.sin(theta)
-TRAIN_X = np.array(X_func(THETA_LST))
-TRAIN_Y = np.array(Y_func(THETA_LST))
-
-TRAIN_V = np.empty([n, 4], dtype=float)
-for i in range(0, n):
-    TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
-
-X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
 
 # Apply oushforward map to v_hat to obtain approximated vector fields
 # Using quad integration
@@ -197,6 +207,8 @@ F_k[1, 1] = 1 / np.sqrt(2)
 F_k[0, 2] = 1 / np.sqrt(2)
 
 g = g[:(2 * K + 1), :, :]
+for j in range(0, 2 * K + 1):
+    g[j, :, :] = np.exp(-tau*lamb[j])*g[j, :, :]
 h_ajl = np.einsum('ak, jkl -> ajl', F_k, g, dtype=float)
 
 c = c[:(2 * J + 1), :, :]
@@ -240,28 +252,40 @@ print(W_theta_y)
 
 X_2, Y_2, U_2, V_2 = zip(*vector_approx)
 
+
 plt.figure()
 ax = plt.gca()
-ax.quiver(X_1, Y_1, U_1, V_1, angles='xy', scale_units='xy', scale=0.3, color='black')
-ax.quiver(X_2, Y_2, U_2, V_2, angles='xy', scale_units='xy', scale=0.3, color='red')
-ax.set_xlim([-5, 5])
-ax.set_ylim([-5, 5])
+ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'black')
+ax.quiver(X_2, Y_2, U_2, V_2, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
+ax.set_xlim([-5,5])
+ax.set_ylim([-5,5])
+ax.set_title('Comparisons of True and SEC Approximated Vector Fields')
 
-t = np.linspace(0, 2 * np.pi, 100000)
-ax.plot(np.cos(t), np.sin(t), linewidth=2.5, color='blue')
+t = np.linspace(0, 2*np.pi, 100000)
+ax.plot(np.cos(t), np.sin(t), linewidth = 2.5, color = 'blue')
 
 plt.draw()
 plt.show()
 
-plt.scatter(THETA_LST, -TRAIN_Y, color='black')
-plt.scatter(THETA_LST, W_theta_x, color='red')
+
+sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+sidefig.suptitle('Comparisons of True and SEC Approximated Vector Fields')
+
+ax1.scatter(x = THETA_LST, y = -TRAIN_Y, color='black')
+ax1.scatter(x = THETA_LST, y = W_theta_x, color='red')
+ax1.set_xticks(np.arange(0, 2*np.pi+0.1, np.pi/4))
+ax1.set_xlabel("Angle Theta")
+ax1.set_ylabel("X-coordinates of Vector Fields")
+ax1.set_title('X-coordinates w.r.t. Angle Theta (true = black, SEC = red)')
+
+ax2.scatter(x = THETA_LST, y = TRAIN_X, color='black')
+ax2.scatter(x = THETA_LST, y = W_theta_y, color='red')
+ax2.set_xticks(np.arange(0, 2*np.pi+0.1, np.pi/4))
+ax2.set_xlabel("Angle Theta")
+ax2.set_ylabel("Y-coordinates of Vector Fields")
+ax2.set_title('Y-coordinates w.r.t. Angle Theta (true = black, SEC = red)')
+
 plt.show()
-
-plt.scatter(THETA_LST, TRAIN_X, color='black')
-plt.scatter(THETA_LST, W_theta_y, color='red')
-plt.show()
-
-
 # %%
 
 

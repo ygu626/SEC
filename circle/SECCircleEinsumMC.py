@@ -8,8 +8,6 @@ from scipy.integrate import solve_ivp
 
 
 # number of non-constant eigenform pairs
-L = 10    
-
 I = 10
 J = 10
 K = 3
@@ -18,7 +16,7 @@ K = 3
 n = 8 
 
 # Weight oaraneter
-tau = 0.28
+tau = 0.5
 
 # Double and triple products of functions
 def double_prod(f, g):
@@ -117,7 +115,7 @@ print(V_1)
 p = mp.Pool()
 
 def v_hat_prime_func_mc(i, j):
-    return np.exp(-tau*j)*monte_carlo_l2_integral(double_prod(phis[i], dphis[j]))
+    return np.exp(-tau*lamb[j])*monte_carlo_l2_integral(double_prod(phis[i], dphis[j]))
 
 v_hat_prime_mc = p.starmap(v_hat_prime_func_mc, 
                         [(i, j) for i in range(0, 2 * J + 1)
@@ -139,7 +137,6 @@ c_mc = p.starmap(c_func_mc,
                 for k in range(0, 2 * I + 1)])
             
 c_mc = np.reshape(np.array(c_mc), (2 * I + 1, 2 * I + 1, 2 * I + 1))
-# %%
 
 
 # Compute g_kij Riemannian metric coefficients
@@ -178,7 +175,7 @@ G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-3))
 # Using quad integration
 v_hat_mc = np.matmul(G_dual_mc, v_hat_prime_mc)
 v_hat_mc = np.reshape(v_hat_mc, (2*J+1, 2*K+1))
-# %%
+
 
 # Apply oushforward map to v_hat to obtain approximated vector fields
 # Using Monte Carlo integration
@@ -190,7 +187,7 @@ g_mc = g_mc[:(2*K+1), :, :]
 
 g_mc_weighted = np.zeros([2*K+1, 2*I+1, 2*I+1], dtype = float)
 for j in range(0, 2*K+1):
-    g_mc_weighted[j, :, :] = np.exp(-tau*j)*g_mc[j, :, :]
+    g_mc_weighted[j, :, :] = np.exp(-tau*lamb[j])*g_mc[j, :, :]
 
 h_ajl_mc = np.einsum('ak, jkl -> ajl', F_k, g_mc_weighted, dtype = float)
 
@@ -232,11 +229,32 @@ ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, co
 ax.quiver(X_3, Y_3, U_3, V_3, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
 ax.set_xlim([-5,5])
 ax.set_ylim([-5,5])
+ax.set_title('Comparisons of True and SEC Approximated Vector Fields')
 
 t = np.linspace(0, 2*np.pi, 100000)
 ax.plot(np.cos(t), np.sin(t), linewidth = 2.5, color = 'blue')
 
 plt.draw()
+plt.show()
+
+
+sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+sidefig.suptitle('Comparisons of True and SEC Approximated Vector Fields')
+
+ax1.scatter(x = THETA_LST, y = -TRAIN_Y, color='black')
+ax1.scatter(x = THETA_LST, y = W_theta_x_mc, color='red')
+ax1.set_xticks(np.arange(0, 2*np.pi+0.1, np.pi/4))
+ax1.set_xlabel("Angle Theta")
+ax1.set_ylabel("X-coordinates of Vector Fields")
+ax1.set_title('X-coordinates w.r.t. Angle Theta (true = black, SEC = red)')
+
+ax2.scatter(x = THETA_LST, y = TRAIN_X, color='black')
+ax2.scatter(x = THETA_LST, y = W_theta_y_mc, color='red')
+ax2.set_xticks(np.arange(0, 2*np.pi+0.1, np.pi/4))
+ax2.set_xlabel("Angle Theta")
+ax2.set_ylabel("Y-coordinates of Vector Fields")
+ax2.set_title('Y-coordinates w.r.t. Angle Theta (true = black, SEC = red)')
+
 plt.show()
 # %%
 

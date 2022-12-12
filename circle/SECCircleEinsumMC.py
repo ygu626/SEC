@@ -16,7 +16,7 @@ K = 3
 n = 8 
 
 # Weight oaraneter
-tau = 0.5
+tau = -3
 
 # Double and triple products of functions
 def double_prod(f, g):
@@ -135,7 +135,7 @@ for i in range(0, 2*I+1):
                                     g_mc[i,j,p] = (lamb[i] + lamb[j] - lamb[p])*c_mc[i,j,p]/2
 
 
-# Compute G_ijkl entries for the Gram operator and its dual
+# Compute G_ijpq entries for the Gram operator and its dual
 # Using Monte Carlo integration
 G_mc = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
 G_mc = np.einsum('ipm, jqm->ijpq', c_mc, g_mc, dtype = float)
@@ -163,12 +163,12 @@ G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-3))
 # Using Monte Carlo integration with weights
 pool = mp.Pool()
 
-def v_hat_prime_func_mc(i, j):
-    return np.exp(-tau*lamb[j])*monte_carlo_l2_integral(double_prod(phis[i], dphis[j]))
+def v_hat_prime_func_mc(p, q):
+    return np.exp(-tau*lamb[q])*monte_carlo_l2_integral(double_prod(phis[p], dphis[q]))
 
 v_hat_prime_mc = pool.starmap(v_hat_prime_func_mc, 
-                        [(i, j) for i in range(0, 2 * J + 1)
-                         for j in range(0, 2 * K + 1)])
+                        [(p, q) for p in range(0, 2 * J + 1)
+                         for q in range(0, 2 * K + 1)])
             
 v_hat_prime_mc = np.reshape(np.array(v_hat_prime_mc), ((2*J+1)*(2*K+1), 1))
 

@@ -179,6 +179,8 @@ def monte_carlo_product(f, a = 0, b = 2*np.pi, N = 200):
         u[start:end] = random.uniform(low = (i/100)*b, high = ((i+1)/100)*b, size = end - start)
     random.shuffle(u)
     
+    # u = np.random.uniform(low = a, high = b, size = N)
+    
     sum = 0.0
     for j in u:
         sum += (1/N)*(f(j)*vF(j))
@@ -195,6 +197,10 @@ b_am_mc = pool.map(b_func_mc,
               [m for m in range(0, 2 * I + 1)])
 b_am_mc = np.array(b_am_mc).T
 
+
+# Apply analysis operator T to obtain v_hat_prime
+# Using pushforward vF of vector field v 
+# and Monte Carlo integration with weights
 gamma_km_mc = np.einsum('ak, am -> km', F_ak, b_am_mc, dtype = float)
 
 g_mc = g_mc[:(2*K+1), :, :]

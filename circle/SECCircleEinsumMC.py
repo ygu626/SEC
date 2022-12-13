@@ -16,7 +16,7 @@ K = 3
 n = 8 
 
 # Weight oaraneter
-tau = -3
+tau = 0
 
 # Double and triple products of functions
 def double_prod(f, g):
@@ -94,7 +94,7 @@ def dphi_basis(i):
 dphis = [dphi_basis(i) for i in range(2*I+1)]
 
 
-# Data points and corresponding vector field on the unit circle
+# Data points and corresponding pushforward of vector field ("arrows") on the unit circle
 THETA_LST = list(np.arange(0, 2*np.pi, np.pi/(n/2)))
 X_func = lambda theta: np.cos(theta)
 Y_func = lambda theta: np.sin(theta)
@@ -109,6 +109,17 @@ X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
 
 print(U_1)
 print(V_1)
+
+# Embedding map F and its pushforward applied to vector field v
+F = lambda theta: np.array([np.cos(theta), np.sin(theta)])
+vF = lambda theta: np.array([-np.sin(theta), np.cos(theta)])
+
+
+# Fourier coefficients F_ak pf F w.r.t. eigenfunctions phi_k
+F_ak = np.zeros([2, 2*I+1], dtype = float)
+F_ak[1, 1] = 1/np.sqrt(2)
+F_ak[0, 2] = 1/np.sqrt(2)
+
 
 
 # Compute c_ijp coefficients
@@ -179,19 +190,15 @@ v_hat_mc = np.matmul(G_dual_mc, v_hat_prime_mc)
 v_hat_mc = np.reshape(v_hat_mc, (2*J+1, 2*K+1))
 
 
-# Apply oushforward map to v_hat to obtain approximated vector fields
+# Apply oushforward map F_* of embedding F to v_hat to obtain approximated vector fields
 # Using Monte Carlo integration with weights
-F_k = np.zeros([2, 2*I+1], dtype = float)
-F_k[1, 1] = 1/np.sqrt(2)
-F_k[0, 2] = 1/np.sqrt(2)
-
 g_mc = g_mc[:(2*K+1), :, :]
 
 g_mc_weighted = np.zeros([2*K+1, 2*I+1, 2*I+1], dtype = float)
 for j in range(0, 2*K+1):
     g_mc_weighted[j, :, :] = np.exp(-tau*lamb[j])*g_mc[j, :, :]
 
-h_ajl_mc = np.einsum('ak, jkl -> ajl', F_k, g_mc_weighted, dtype = float)
+h_ajl_mc = np.einsum('ak, jkl -> ajl', F_ak, g_mc_weighted, dtype = float)
 
 c_mc = c_mc[:(2*J+1), :, :]
 d_jlm_mc = np.einsum('ij, ilm -> jlm', v_hat_mc, c_mc, dtype = float)
@@ -262,7 +269,7 @@ plt.show()
 
 
 # %%
-# ODE solver applied to thr SEC approximated vector fields
+# ODE solver applied to the SEC approximated vector fields
 # with initial condition specified
 # and the true system
 

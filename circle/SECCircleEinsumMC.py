@@ -110,16 +110,15 @@ X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
 print(U_1)
 print(V_1)
 
+
 # Embedding map F and its pushforward applied to vector field v
 F = lambda theta: np.array([np.cos(theta), np.sin(theta)])
 vF = lambda theta: np.array([-np.sin(theta), np.cos(theta)])
-
 
 # Fourier coefficients F_ak pf F w.r.t. eigenfunctions phi_k
 F_ak = np.zeros([2, 2*I+1], dtype = float)
 F_ak[1, 1] = 1/np.sqrt(2)
 F_ak[0, 2] = 1/np.sqrt(2)
-
 
 
 # Compute c_ijp coefficients
@@ -170,19 +169,60 @@ G_mc_weighted = np.reshape(G_mc_weighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-3))
 
 
-# Apply analysis operator T to obtain v_hat_prime
-# Using Monte Carlo integration with weights
+# Deterministic Monte Carlo summation of products between eigenfunction phi_mn and "arrows" v_an
+def monte_carlo_product(f, a = 0, b = 2*np.pi, N = 200):
+    u = np.zeros(N)
+    subsets = np.arange(0, N+1, N/100)
+    for i in range(0, 100):
+        start = int(subsets[i])
+        end = int(subsets[i+1])
+        u[start:end] = random.uniform(low = (i/100)*b, high = ((i+1)/100)*b, size = end - start)
+    random.shuffle(u)
+    
+    sum = 0.0
+    for j in u:
+        sum += (1/N)*(f(j)*vF(j))
+
+    return sum
+
+# Compute b_am entries using Monte Carlo summation
 pool = mp.Pool()
 
-def v_hat_prime_func_mc(p, q):
-    return np.exp(-tau*lamb[q])*monte_carlo_l2_integral(double_prod(phis[p], dphis[q]))
+def b_func_mc(m):
+    return monte_carlo_product(phis[m])
 
-v_hat_prime_mc = pool.starmap(v_hat_prime_func_mc, 
-                        [(p, q) for p in range(0, 2 * J + 1)
-                         for q in range(0, 2 * K + 1)])
-            
+b_am_mc = pool.map(b_func_mc, 
+              [m for m in range(0, 2 * I + 1)])
+b_am_mc = np.array(b_am_mc).T
+
+gamma_km_mc = np.einsum('ak, am -> km', F_ak, b_am_mc, dtype = float)
+
+g_mc = g_mc[:(2*K+1), :, :]
+eta_qlm_mc = np.einsum('qkl, km -> qlm', g_mc, gamma_km_mc, dtype = float)
+
+v_hat_prime_mc = np.einsum('qlm, plm -> pq', eta_qlm_mc, c_mc, dtype = float)
+
+for q in range(0, 2*K+1):
+    v_hat_prime_mc[:, q] = np.exp(-tau*lamb[q])*v_hat_prime_mc[:, q]
+    
 v_hat_prime_mc = np.reshape(np.array(v_hat_prime_mc), ((2*J+1)*(2*K+1), 1))
+# %%
 
+
+# %%
+# Apply analysis operator T to obtain v_hat_prime
+# Using Monte Carlo integration with weights
+# pool = mp.Pool()
+
+# def v_hat_prime_func_mc(p, q):
+#     return np.exp(-tau*lamb[q])*monte_carlo_l2_integral(double_prod(phis[p], dphis[q]))
+
+# v_hat_prime_mc = pool.starmap(v_hat_prime_func_mc, 
+#                         [(p, q) for p in range(0, 2 * J + 1)
+#                          for q in range(0, 2 * K + 1)])
+            
+# v_hat_prime_mc = np.reshape(np.array(v_hat_prime_mc), ((2*J+1)*(2*K+1), 1))
+# %%
 
 # Apply dual Gram operator G^+ to obtain v_hat 
 # Using quad integration
@@ -192,7 +232,8 @@ v_hat_mc = np.reshape(v_hat_mc, (2*J+1, 2*K+1))
 
 # Apply oushforward map F_* of embedding F to v_hat to obtain approximated vector fields
 # Using Monte Carlo integration with weights
-g_mc = g_mc[:(2*K+1), :, :]
+
+# g_mc = g_mc[:(2*K+1), :, :]
 
 g_mc_weighted = np.zeros([2*K+1, 2*I+1, 2*I+1], dtype = float)
 for j in range(0, 2*K+1):

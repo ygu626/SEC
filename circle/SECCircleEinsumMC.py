@@ -170,13 +170,13 @@ G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-3))
 
 
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
-def monte_carlo_product(f, a = 0, b = 2*np.pi, N = 200):
+def monte_carlo_product(f, a = 0, b = 2*np.pi, N = 800):
     u = np.zeros(N)
-    subsets = np.arange(0, N+1, N/100)
-    for i in range(0, 100):
+    subsets = np.arange(0, N+1, N/400)
+    for i in range(0, 400):
         start = int(subsets[i])
         end = int(subsets[i+1])
-        u[start:end] = random.uniform(low = (i/100)*b, high = ((i+1)/100)*b, size = end - start)
+        u[start:end] = random.uniform(low = (i/400)*b, high = ((i+1)/400)*b, size = end - start)
     random.shuffle(u)
     
     # u = np.random.uniform(low = a, high = b, size = N)
@@ -237,6 +237,20 @@ v_hat_mc = np.matmul(G_dual_mc, v_hat_prime_mc)
 v_hat_mc = np.reshape(v_hat_mc, (2*J+1, 2*K+1))
 
 
+# Plot v_hat entries
+plt.figure(figsize=(5,5))
+plt.imshow(v_hat_mc)
+
+plt.title('v_hat_ij')
+plt.xlabel('i')
+plt.ylabel('j')
+plt.xticks(np.arange(0, 7+0.1, 1))
+plt.yticks(np.arange(0, 21+0.1, 1))
+
+plt.show()
+# %%
+
+
 # Apply oushforward map F_* of embedding F to v_hat to obtain approximated vector fields
 # Using Monte Carlo integration with weights
 
@@ -280,6 +294,7 @@ print(W_theta_y_mc)
 X_3, Y_3, U_3, V_3 = zip(*vector_approx_mc)
 
 
+# Comparison between true pusbforward of vector field and pushforward of SEC approximated vector field
 plt.figure()
 ax = plt.gca()
 ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'black')
@@ -414,4 +429,14 @@ ax2.plot(sol_sec_mc.t, sol_sec_mc.y.T[:, 1], color='blue')
 ax2.set_title('y-coordinates prediction w.r.t. time t (true = red, SEC = blue)')
 
 plt.show()
+# %%
+
+
+# %%
+print(quad_l2_integral(double_prod(phis[1],dphis[2]), 0, 2*np.pi))
+print(quad_l2_integral(double_prod(phis[2],dphis[1]), 0, 2*np.pi))
+
+print(quad_l2_integral(double_prod(phis[3],dphis[4]), 0, 2*np.pi))
+print(quad_l2_integral(double_prod(phis[4],dphis[3]), 0, 2*np.pi))
+
 # %%

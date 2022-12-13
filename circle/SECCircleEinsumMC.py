@@ -169,7 +169,7 @@ G_mc_weighted = np.reshape(G_mc_weighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-3))
 
 
-# Deterministic Monte Carlo summation of products between eigenfunction phi_mn and "arrows" v_an
+# (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
 def monte_carlo_product(f, a = 0, b = 2*np.pi, N = 200):
     u = np.zeros(N)
     subsets = np.arange(0, N+1, N/100)
@@ -181,13 +181,14 @@ def monte_carlo_product(f, a = 0, b = 2*np.pi, N = 200):
     
     # u = np.random.uniform(low = a, high = b, size = N)
     
-    sum = 0.0
+    integral = 0.0
     for j in u:
-        sum += (1/N)*(f(j)*vF(j))
+        integral += (1/N)*(f(j)*vF(j))
 
-    return sum
+    return integral
 
-# Compute b_am entries using Monte Carlo summation
+
+# Compute b_am entries using (L2) deterministic Monte Carlo integral
 pool = mp.Pool()
 
 def b_func_mc(m):

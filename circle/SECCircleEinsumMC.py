@@ -431,13 +431,3 @@ ax2.set_title('y-coordinates prediction w.r.t. time t (true = red, SEC = blue)')
 
 plt.show()
 # %%
-
-
-# %%
-print(quad_l2_integral(double_prod(phis[1],dphis[2]), 0, 2*np.pi))
-print(quad_l2_integral(double_prod(phis[2],dphis[1]), 0, 2*np.pi))
-
-print(quad_l2_integral(double_prod(phis[3],dphis[4]), 0, 2*np.pi))
-print(quad_l2_integral(double_prod(phis[4],dphis[3]), 0, 2*np.pi))
-
-# %%

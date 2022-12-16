@@ -9,7 +9,7 @@ from scipy.integrate import solve_ivp
 
 # Number of non-constant eigenform pairs
 I = 10
-J = 10
+J = 5
 K = 3
 
 # Number of data points
@@ -207,6 +207,7 @@ gamma_km_mc = np.einsum('ak, am -> km', F_ak, b_am_mc, dtype = float)
 g_mc = g_mc[:(2*K+1), :, :]
 eta_qlm_mc = np.einsum('qkl, km -> qlm', g_mc, gamma_km_mc, dtype = float)
 
+c_mc = c_mc[:(2*J+1), :, :]
 v_hat_prime_mc = np.einsum('qlm, plm -> pq', eta_qlm_mc, c_mc, dtype = float)
 
 for q in range(0, 2*K+1):
@@ -262,7 +263,7 @@ for j in range(0, 2*K+1):
 
 h_ajl_mc = np.einsum('ak, jkl -> ajl', F_ak, g_mc_weighted, dtype = float)
 
-c_mc = c_mc[:(2*J+1), :, :]
+# c_mc = c_mc[:(2*J+1), :, :]
 d_jlm_mc = np.einsum('ij, ilm -> jlm', v_hat_mc, c_mc, dtype = float)
 
 p_am_mc = np.einsum('ajl, jlm -> am', h_ajl_mc, d_jlm_mc, dtype = float)

@@ -7,16 +7,16 @@ from scipy.integrate import quad
 from scipy.integrate import solve_ivp
 
 
-# Number of non-constant eigenform pairs
-I = 10
-J = 5
-K = 3
+I = 10      # Inner index for eigenfunctions
+J = 5       # Outer index for eigenfunctions
+K = 3       # Index for gradients of eigenfunctions
 
 # Number of data points
 n = 8 
 
 # Weight oaraneter
 tau = 0
+
 
 # Double and triple products of functions
 def double_prod(f, g):

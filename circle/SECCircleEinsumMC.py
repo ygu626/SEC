@@ -12,11 +12,10 @@ J = 5       # Outer index for eigenfunctions
 K = 3       # Index for gradients of eigenfunctions
 
 # Number of data points
-n = 8 
+n = 4 
 
 # Weight oaraneter
 tau = 0
-
 
 # Double and triple products of functions
 def double_prod(f, g):
@@ -166,7 +165,12 @@ for i in range(0, 2*J+1):
 
 G_mc_weighted = np.reshape(G_mc_weighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
+# s = np.linalg.svd(G_mc_weighted, full_matrices = True, compute_uv = False, hermitian = False)
+# print(s)
+
+
 G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-3))
+# G_dual_mc = np.linalg.pinv(G_mc_weighted)
 
 
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
@@ -199,6 +203,7 @@ b_am_mc = pool.map(b_func_mc,
 b_am_mc = np.array(b_am_mc).T
 
 
+# %%
 # Apply analysis operator T to obtain v_hat_prime
 # Using pushforward vF of vector field v 
 # and Monte Carlo integration with weights
@@ -212,25 +217,57 @@ v_hat_prime_mc = np.einsum('qlm, plm -> pq', eta_qlm_mc, c_mc, dtype = float)
 
 for q in range(0, 2*K+1):
     v_hat_prime_mc[:, q] = np.exp(-tau*lamb[q])*v_hat_prime_mc[:, q]
-    
-v_hat_prime_mc = np.reshape(np.array(v_hat_prime_mc), ((2*J+1)*(2*K+1), 1))
+
+v_hat_prime_mc = np.reshape(np.array(v_hat_prime_mc), ((2*J+1), (2*K+1)))
+
+# Plot v_hat prime entries 
+plt.figure(figsize=(5,5))
+plt.imshow(v_hat_prime_mc)
+
+plt.title('v_hat_prime_pq (MC + pushforward)')
+plt.xlabel('q')
+plt.ylabel('p')
+plt.xticks(np.arange(0, 2*K+1.1, 1))
+plt.yticks(np.arange(0, 2*J+1.1, 1))
+
+plt.show()
+ 
+v_hat_prime_mc = np.reshape(v_hat_prime_mc, ((2*J+1)*(2*K+1), 1))
 # %%
 
 
 # %%
 # Apply analysis operator T to obtain v_hat_prime
 # Using Monte Carlo integration with weights
-# pool = mp.Pool()
+pool = mp.Pool()
 
-# def v_hat_prime_func_mc(p, q):
-#     return np.exp(-tau*lamb[q])*monte_carlo_l2_integral(double_prod(phis[p], dphis[q]))
+def v_hat_prime_func_mc2(p, q):
+    return np.exp(-tau*lamb[q])*monte_carlo_l2_integral(double_prod(phis[p], dphis[q]))
 
-# v_hat_prime_mc = pool.starmap(v_hat_prime_func_mc, 
-#                         [(p, q) for p in range(0, 2 * J + 1)
-#                          for q in range(0, 2 * K + 1)])
-            
-# v_hat_prime_mc = np.reshape(np.array(v_hat_prime_mc), ((2*J+1)*(2*K+1), 1))
+v_hat_prime_mc2 = pool.starmap(v_hat_prime_func_mc2, 
+                        [(p, q) for p in range(0, 2 * J + 1)
+                         for q in range(0, 2 * K + 1)])
+    
+v_hat_prime_mc2 = np.reshape(np.array(v_hat_prime_mc2), ((2*J+1), (2*K+1)))
+       
+# Plot v_hat prime entries 
+plt.figure(figsize=(5,5))
+plt.imshow(v_hat_prime_mc2)
+
+plt.title('v_hat_prime_pq (original vector field)')
+plt.xlabel('q')
+plt.ylabel('p')
+plt.xticks(np.arange(0, 2*K+1.1, 1))
+plt.yticks(np.arange(0, 2*J+1.1, 1))
+
+plt.show()
+
+v_hat_prime_mc2 = np.reshape(v_hat_prime_mc2, ((2*J+1)*(2*K+1), 1))
+
+print(np.amax(v_hat_prime_mc - v_hat_prime_mc2))
+print(np.amin(v_hat_prime_mc - v_hat_prime_mc2))
 # %%
+
 
 # Apply dual Gram operator G^+ to obtain v_hat 
 # Using quad integration
@@ -243,15 +280,16 @@ plt.figure(figsize=(5,5))
 plt.imshow(v_hat_mc)
 
 plt.title('v_hat_ij')
-plt.xlabel('i')
-plt.ylabel('j')
-plt.xticks(np.arange(0, 7+0.1, 1))
-plt.yticks(np.arange(0, 21+0.1, 1))
+plt.xlabel('j')
+plt.ylabel('i')
+plt.xticks(np.arange(0, 2*K+1.1, 1))
+plt.yticks(np.arange(0, 2*J+1.1, 1))
 
 plt.show()
 # %%
 
 
+# %%
 # Apply oushforward map F_* of embedding F to v_hat to obtain approximated vector fields
 # Using Monte Carlo integration with weights
 

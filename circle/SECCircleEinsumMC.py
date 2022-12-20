@@ -147,7 +147,7 @@ for i in range(0, 2*I+1):
 # Compute G_ijpq entries for the Gram operator and its dual
 # Using Monte Carlo integration
 G_mc = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
-G_mc = np.einsum('ipm, jqm->ijpq', c_mc, g_mc, dtype = float)
+G_mc = np.einsum('ipm, jqm -> ijpq', c_mc, g_mc, dtype = float)
 
 G_mc = G_mc[:2*J+1, :2*K+1, :2*J+1, :2*K+1]
 # G_mc = np.reshape(G_mc, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
@@ -165,13 +165,161 @@ for i in range(0, 2*J+1):
 
 G_mc_weighted = np.reshape(G_mc_weighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
-# s = np.linalg.svd(G_mc_weighted, full_matrices = True, compute_uv = False, hermitian = False)
-# print(s)
-
-G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-3))
+threshold = np.amax(lamb)*1e-3      # Threshold value for truncated SVD
+G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = threshold)
 # G_dual_mc = np.linalg.pinv(G_mc_weighted)
 
+# Perform singular value decomposition (SVD) of the Gram operator G
+u, s, vh = np.linalg.svd(G_mc_weighted, full_matrices = True, compute_uv = True, hermitian = False)
 
+S = np.zeros([G_mc_weighted.shape[0], G_mc_weighted.shape[1]], dtype = float)
+S[:G_mc_weighted.shape[0], :G_mc_weighted.shape[0]] = np.diag(s)
+
+truncated_s = []
+for i in range(len(s)):
+    if s[i] >= threshold:
+        truncated_s.append(s[i])
+
+
+sidefig, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8) = plt.subplots(8, figsize=(12, 96))
+sidefig.suptitle('Singular Values of Gram Operator G_ijpq (descending order)')
+
+S1 = np.zeros([10, 10], dtype = float)
+S1[:10, :10] = np.diag(s[:10])
+ax1.matshow(S1, cmap = plt.cm.Blues)
+ax1.set_title('1st-10th largest singular Values of Gram Operator G_ijpq')
+ax1.set_xticks(np.arange(0, 10.1, 1))
+ax1.set_xlabel('pq')
+ax1.set_yticks(np.arange(0, 10.1, 1))
+ax1.set_ylabel('ij')
+
+for i in range(0, 10):
+    for j in range(0, 10):
+        num1 = round(S1[i,j], 5)
+        ax1.text(j, i, str(num1), va = 'center', ha = 'center', fontsize = 'large', color = 'white')
+
+
+S2 = np.zeros([10, 10], dtype = float)
+S2[:10, :10] = np.diag(s[10:20])
+ax2.matshow(S2, cmap = plt.cm.Blues)
+ax2.set_title('11th-20th largest singular Values of Gram Operator G_ijpq')
+ax2.set_xticks(np.arange(0, 10.1, 1))
+ax2.set_xlabel('pq')
+ax2.set_yticks(np.arange(0, 10.1, 1))
+ax2.set_ylabel('ij')
+
+for i in range(0, 10):
+    for j in range(0, 10):
+        num2 = round(S2[i,j], 5)
+        if (i == j) and (i < 7):
+            ax2.text(j, i, str(num2), va = 'center', ha = 'center', fontsize = 'large', color = 'white')
+        elif (i == j) and (i >= 7):
+            ax2.text(j, i, str(num2), va = 'center', ha = 'center', fontsize = 'large', color = 'red')
+
+
+
+S3 = np.zeros([10, 10], dtype = float)
+S3[:10, :10] = np.diag(s[20:30])
+ax3.matshow(S3, cmap = plt.cm.Blues)
+ax3.set_title('21st-30th largest singular Values of Gram Operator G_ijpq')
+ax3.set_xticks(np.arange(0, 10.1, 1))
+ax3.set_xlabel('pq')
+ax3.set_yticks(np.arange(0, 10.1, 1))
+ax3.set_ylabel('ij')
+
+for i in range(0, 10):
+    for j in range(0, 10):
+        num3 = round(S3[i,j], 5)
+        ax3.text(j, i, str(num3), va = 'center', ha = 'center', fontsize = 'large', color = 'white')
+
+
+S4 = np.zeros([10, 10], dtype = float)
+S4[:10, :10] = np.diag(s[30:40])
+ax4.matshow(S4, cmap = plt.cm.Blues)
+ax4.set_title('31st-40th largest singular Values of Gram Operator G_ijpq')
+ax4.set_xticks(np.arange(0, 10.1, 1))
+ax4.set_xlabel('pq')
+ax4.set_yticks(np.arange(0, 10.1, 1))
+ax4.set_ylabel('ij')
+
+for i in range(0, 10):
+    for j in range(0, 10):
+        num4 = round(S4[i,j], 5)
+        ax4.text(j, i, str(num4), va = 'center', ha = 'center', fontsize = 'large', color = 'white')
+
+
+S5 = np.zeros([10, 10], dtype = float)
+S5[:10, :10] = np.diag(s[40:50])
+ax5.matshow(S5, cmap = plt.cm.Blues)
+ax5.set_title('41st-50th largest singular Values of Gram Operator G_ijpq')
+ax5.set_xticks(np.arange(0, 10.1, 1))
+ax5.set_xlabel('pq')
+ax5.set_yticks(np.arange(0, 10.1, 1))
+ax5.set_ylabel('ij')
+
+for i in range(0, 10):
+    for j in range(0, 10):
+        num5 = round(S5[i,j], 5)
+        ax5.text(j, i, str(num5), va = 'center', ha = 'center', fontsize = 'large', color = 'white')
+
+
+S6 = np.zeros([10, 10], dtype = float)
+S6[:10, :10] = np.diag(s[50:60])
+ax6.matshow(S6, cmap = plt.cm.Blues)
+ax6.set_title('51st-60th largest singular Values of Gram Operator G_ijpq')
+ax6.set_xticks(np.arange(0, 10.1, 1))
+ax6.set_xlabel('pq')
+ax6.set_yticks(np.arange(0, 10.1, 1))
+ax6.set_ylabel('ij')
+
+for i in range(0, 10):
+    for j in range(0, 10):
+        num6 = round(S6[i,j], 5)
+        ax6.text(j, i, str(num6), va = 'center', ha = 'center', fontsize = 'large', color = 'white')
+
+
+S7 = np.zeros([10, 10], dtype = float)
+S7[:10, :10] = np.diag(s[60:70])
+ax7.matshow(S7, cmap = plt.cm.Blues)
+ax7.set_title('61st-70th largest singular Values of Gram Operator G_ijpq')
+ax7.set_xticks(np.arange(0, 10.1, 1))
+ax7.set_xlabel('pq')
+ax7.set_yticks(np.arange(0, 10.1, 1))
+ax7.set_ylabel('ij')
+
+for i in range(0, 10):
+    for j in range(0, 10):
+        num7 = round(S7[i,j], 5)
+        ax7.text(j, i, str(num7), va = 'center', ha = 'center', fontsize = 'large', color = 'white')
+
+
+S8 = np.zeros([7, 7], dtype = float)
+S8[:7, :7] = np.diag(s[70:])
+ax8.matshow(S8, cmap = plt.cm.Blues)
+ax8.set_title('71st-77th largest singular Values of Gram Operator G_ijpq')
+ax8.set_xticks(np.arange(0, 7.1, 1))
+ax8.set_xlabel('pq')
+ax8.set_yticks(np.arange(0, 7.1, 1))
+ax8.set_ylabel('ij')
+
+for i in range(0, 7):
+    for j in range(0, 7):
+        num8 = round(S8[i,j], 5)
+        if (i == j) and (i < 5):
+            ax8.text(j, i, str(num8), va = 'center', ha = 'center', fontsize = 'large', color = 'white')
+        elif (i == j) and (i >= 5):
+            ax8.text(j, i, str(num8), va = 'center', ha = 'center', fontsize = 'large', color = 'red')
+
+
+plt.show()
+
+print(np.amax(S))
+print(np.amin(S))
+print(len(truncated_s))
+# %%
+
+
+# %%
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
 def monte_carlo_product(f, a = 0, b = 2*np.pi, N = 800):
     u = np.zeros(N)

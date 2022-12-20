@@ -168,7 +168,6 @@ G_mc_weighted = np.reshape(G_mc_weighted, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 # s = np.linalg.svd(G_mc_weighted, full_matrices = True, compute_uv = False, hermitian = False)
 # print(s)
 
-
 G_dual_mc = np.linalg.pinv(G_mc_weighted, rcond = (np.amax(lamb)*1e-3))
 # G_dual_mc = np.linalg.pinv(G_mc_weighted)
 
@@ -219,26 +218,13 @@ for q in range(0, 2*K+1):
     v_hat_prime_mc[:, q] = np.exp(-tau*lamb[q])*v_hat_prime_mc[:, q]
 
 v_hat_prime_mc = np.reshape(np.array(v_hat_prime_mc), ((2*J+1), (2*K+1)))
-
-# Plot v_hat prime entries 
-plt.figure(figsize=(5,5))
-plt.imshow(v_hat_prime_mc)
-
-plt.title('v_hat_prime_pq (MC + pushforward)')
-plt.xlabel('q')
-plt.ylabel('p')
-plt.xticks(np.arange(0, 2*K+1.1, 1))
-plt.yticks(np.arange(0, 2*J+1.1, 1))
-
-plt.show()
- 
-v_hat_prime_mc = np.reshape(v_hat_prime_mc, ((2*J+1)*(2*K+1), 1))
 # %%
 
 
 # %%
 # Apply analysis operator T to obtain v_hat_prime
-# Using Monte Carlo integration with weights
+# Using original vector field v
+# and Monte Carlo integration with weights
 pool = mp.Pool()
 
 def v_hat_prime_func_mc2(p, q):
@@ -249,19 +235,33 @@ v_hat_prime_mc2 = pool.starmap(v_hat_prime_func_mc2,
                          for q in range(0, 2 * K + 1)])
     
 v_hat_prime_mc2 = np.reshape(np.array(v_hat_prime_mc2), ((2*J+1), (2*K+1)))
+
        
 # Plot v_hat prime entries 
-plt.figure(figsize=(5,5))
-plt.imshow(v_hat_prime_mc2)
+# when given pushforwad vF and when given orginal vector field v
+sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+sidefig.suptitle('Comparisons of v_hat_prime_pq Given vF and v')
 
-plt.title('v_hat_prime_pq (original vector field)')
-plt.xlabel('q')
-plt.ylabel('p')
-plt.xticks(np.arange(0, 2*K+1.1, 1))
-plt.yticks(np.arange(0, 2*J+1.1, 1))
+ax1.imshow(v_hat_prime_mc)
+
+ax1.set_title('v_hat_prime_pq (given pushforward vF)')
+ax1.set_xticks(np.arange(0, 2*K+1.1, 1))
+ax1.set_xlabel('q')
+ax1.set_yticks(np.arange(0, 2*J+1.1, 1))
+ax1.set_ylabel('p')
+
+ax2.imshow(v_hat_prime_mc2)
+
+ax2.set_title('v_hat_prime_pq (given v)')
+ax2.set_xticks(np.arange(0, 2*K+1.1, 1))
+ax2.set_xlabel('q')
+ax2.set_yticks(np.arange(0, 2*J+1.1, 1))
+ax2.set_ylabel('p')
 
 plt.show()
 
+
+v_hat_prime_mc = np.reshape(v_hat_prime_mc, ((2*J+1)*(2*K+1), 1))
 v_hat_prime_mc2 = np.reshape(v_hat_prime_mc2, ((2*J+1)*(2*K+1), 1))
 
 print(np.amax(v_hat_prime_mc - v_hat_prime_mc2))

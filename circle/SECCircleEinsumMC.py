@@ -239,10 +239,10 @@ v_hat_prime_mc2 = np.reshape(np.array(v_hat_prime_mc2), ((2*J+1), (2*K+1)))
        
 # Plot v_hat prime entries 
 # when given pushforwad vF and when given orginal vector field v
-sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
-sidefig.suptitle('Comparisons of v_hat_prime_pq Given vF and v')
+sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 12))
+sidefig.suptitle('Comparisons of v_hat_prime_pq given vF and v')
 
-ax1.imshow(v_hat_prime_mc)
+ax1.matshow(v_hat_prime_mc, cmap = plt.cm.Blues)
 
 ax1.set_title('v_hat_prime_pq (given pushforward vF)')
 ax1.set_xticks(np.arange(0, 2*K+1.1, 1))
@@ -250,7 +250,13 @@ ax1.set_xlabel('q')
 ax1.set_yticks(np.arange(0, 2*J+1.1, 1))
 ax1.set_ylabel('p')
 
-ax2.imshow(v_hat_prime_mc2)
+for p in range(0, 2*J+1):
+    for q in range(0, 2*K+1):
+        num = round(v_hat_prime_mc[p,q], 5)
+        ax1.text(q, p, str(num), va = 'center', ha = 'center')
+
+
+ax2.matshow(v_hat_prime_mc2, cmap = plt.cm.Blues)
 
 ax2.set_title('v_hat_prime_pq (given v)')
 ax2.set_xticks(np.arange(0, 2*K+1.1, 1))
@@ -258,34 +264,72 @@ ax2.set_xlabel('q')
 ax2.set_yticks(np.arange(0, 2*J+1.1, 1))
 ax2.set_ylabel('p')
 
+for p in range(0, 2*J+1):
+    for q in range(0, 2*K+1):
+        num2 = round(v_hat_prime_mc2[p,q], 5)
+        ax2.text(q, p, str(num2), va = 'center', ha = 'center')
+
 plt.show()
 
 
 v_hat_prime_mc = np.reshape(v_hat_prime_mc, ((2*J+1)*(2*K+1), 1))
 v_hat_prime_mc2 = np.reshape(v_hat_prime_mc2, ((2*J+1)*(2*K+1), 1))
 
+print(np.amax(v_hat_prime_mc))
+print(np.amin(v_hat_prime_mc))
 print(np.amax(v_hat_prime_mc - v_hat_prime_mc2))
 print(np.amin(v_hat_prime_mc - v_hat_prime_mc2))
 # %%
 
 
 # Apply dual Gram operator G^+ to obtain v_hat 
-# Using quad integration
+# Using pushforward vF and original vector field v
+# Both with Monte Carlo integration with weights
 v_hat_mc = np.matmul(G_dual_mc, v_hat_prime_mc)
 v_hat_mc = np.reshape(v_hat_mc, (2*J+1, 2*K+1))
 
+v_hat_mc2 = np.matmul(G_dual_mc, v_hat_prime_mc2)
+v_hat_mc2 = np.reshape(v_hat_mc2, (2*J+1, 2*K+1))
+
 
 # Plot v_hat entries
-plt.figure(figsize=(5,5))
-plt.imshow(v_hat_mc)
+# when given pushforwad vF and when given orginal vector field v
+sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(24, 12))
+sidefig.suptitle('Comparisons of v_hat_ij Given vF and v')
 
-plt.title('v_hat_ij')
-plt.xlabel('j')
-plt.ylabel('i')
-plt.xticks(np.arange(0, 2*K+1.1, 1))
-plt.yticks(np.arange(0, 2*J+1.1, 1))
+ax1.matshow(v_hat_mc, cmap = plt.cm.Blues)
+
+ax1.set_title('v_hat_ij (given pushforward vF)')
+ax1.set_xticks(np.arange(0, 2*K+1.1, 1))
+ax1.set_xlabel('j')
+ax1.set_yticks(np.arange(0, 2*J+1.1, 1))
+ax1.set_ylabel('i')
+
+for i in range(0, 2*J+1):
+    for j in range(0, 2*K+1):
+        num = round(v_hat_mc[i,j], 5)
+        ax1.text(j, i, str(num), va = 'center', ha = 'center')
+
+
+ax2.matshow(v_hat_mc2, cmap = plt.cm.Blues)
+
+ax2.set_title('v_hat_ij (given v)')
+ax2.set_xticks(np.arange(0, 2*K+1.1, 1))
+ax2.set_xlabel('j')
+ax2.set_yticks(np.arange(0, 2*J+1.1, 1))
+ax2.set_ylabel('i')
+
+for i in range(0, 2*J+1):
+    for j in range(0, 2*K+1):
+        num2 = round(v_hat_mc2[i,j], 5)
+        ax2.text(j, i, str(num2), va = 'center', ha = 'center')
 
 plt.show()
+
+print(np.amax(v_hat_mc))
+print(np.amin(v_hat_mc))
+print(np.amax(v_hat_mc - v_hat_mc2))
+print(np.amin(v_hat_mc - v_hat_mc2))
 # %%
 
 
@@ -368,6 +412,7 @@ ax2.set_title('Y-coordinates w.r.t. Angle Theta (true = black, SEC = red)')
 
 plt.show()
 # %%
+
 
 
 # %%

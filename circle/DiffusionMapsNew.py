@@ -79,7 +79,7 @@ def make_k_hat(k, q):
         q_x = q(x).reshape(q(x).shape[0], 1)
         q_y = q(y).reshape(1, q(y).shape[0])
         # treat qx as column vector
-        k_hat_xy = np.divide(k(x, y), np.matmul(q_x, q_y))
+        k_hat_xy = np.divide(k(x, y), np.power(np.matmul(q_x, q_y), alpha))
         return k_hat_xy
     return k_hat
 
@@ -166,7 +166,6 @@ varphi = make_varphi(p, training_data, Lamb, Phi_normalized)
 # %%
 # Get x values of the sine wave
 time = u
-time2 = u
 
 # Amplitude of the sine wave is sine of a variable like time
 amplitude = Phi_normalized[:, 2]
@@ -174,7 +173,7 @@ amplitude2 = np.real(varphi(training_data)[:, 2])
 
 # Plot a sine wave using time and amplitude obtained for the sine wave
 plt.scatter(time, amplitude, color = 'blue')
-plt.scatter(time2, amplitude2, color = 'red')
+plt.scatter(time, amplitude2, color = 'red')
 
 # Give a title for the sine wave plot
 plt.title('Sine wave')

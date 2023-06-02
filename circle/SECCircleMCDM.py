@@ -1,3 +1,11 @@
+"""
+Spectral Exterior Calculus (SEC)
+Circle S1 Example
+Approximations of vector fields on the cirlce
+Given pushforward of tangent vectors on the circle
+and determinstically sampled Monte Carlo points on the circle
+"""
+
 # %%
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,22 +17,23 @@ from scipy.integrate import solve_ivp
 
 
 # Parameters
-I = 10      # Inner index for eigenfunctions
-J = 5       # Outer index for eigenfunctions
-K = 3       # Index for gradients of eigenfunctions
+I = 10          # Inner index for eigenfunctions
+J = 5           # Outer index for eigenfunctions
+K = 3           # Index for gradients of eigenfunctions
+n = 8           # Number of approximated tangent vectors
+N = 800         # Number of Monte Carlo training data points 
 
-# Number of data points
-n = 4 
+epsilon = 0.15  # RBF bandwidth parameter
+tau = 0         # Weight parameter for Laplacian eigenvalues
+alpha = 1       # Weight parameter for Markov kernel matrix
 
-# Weight oaraneter
-tau = 0
+"""
+Training data set
+with pushforward of vector fields v on the circle
+and Embedding map F with pushforward vF
+"""
 
-epsilon = 0.15          # RBF bandwidth parameter
-alpha = 1
-N = 800                 # Number of training data points
-
-
-# Deterministic Monte Carlo sampled training data points
+# Deterministically sampled Monte Carlo training data points
 def monte_carlo_points(a = 0, b = 2*np.pi, N = 800):
     u = np.zeros(N)
     subsets = np.arange(0, N+1, N/400)
@@ -43,6 +52,34 @@ def monte_carlo_points(a = 0, b = 2*np.pi, N = 800):
 u, training_data = monte_carlo_points()
 plt.scatter(training_data[0,:], training_data[1,:])
 plt.show
+
+
+# n pushforward of vector field v ("arrows") on the circle
+# given points (x, y) specified by angle theat on the circle
+THETA_LST = list(np.arange(0, 2*np.pi, np.pi/(n/2)))
+X_func = lambda theta: np.cos(theta)
+Y_func = lambda theta: np.sin(theta)
+TRAIN_X = np.array(X_func(THETA_LST))
+TRAIN_Y = np.array(Y_func(THETA_LST))
+
+TRAIN_V = np.empty([n, 4], dtype = float)
+for i in range(0, n):
+        TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
+
+X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
+
+print(U_1)
+print(V_1)
+
+
+# Embedding map F and its pushforward applied vF to vector field v
+F = lambda theta: np.array([np.cos(theta), np.sin(theta)])
+vF = lambda theta: np.array([-np.sin(theta), np.cos(theta)])
+
+
+"""
+Functions utilized in the following program
+"""
 
 # Double and triple products of functions
 def double_prod(f, g):
@@ -71,47 +108,30 @@ def dist_matrix(x_1,x_2):
     y = y + w_2
     return y
 
-
-# Data points and corresponding pushforward of vector field ("arrows") on the unit circle
-THETA_LST = list(np.arange(0, 2*np.pi, np.pi/(n/2)))
-X_func = lambda theta: np.cos(theta)
-Y_func = lambda theta: np.sin(theta)
-TRAIN_X = np.array(X_func(THETA_LST))
-TRAIN_Y = np.array(Y_func(THETA_LST))
-
-TRAIN_V = np.empty([n, 4], dtype = float)
-for i in range(0, n):
-        TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
-
-X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
-
-print(U_1)
-print(V_1)
-
-
-# Embedding map F and its pushforward applied to vector field v
-F = lambda theta: np.array([np.cos(theta), np.sin(theta)])
-vF = lambda theta: np.array([-np.sin(theta), np.cos(theta)])
-
-
-# %%
-# Diffusion maps
-
-# Heat kernel function
-k = lambda x_1, x_2: np.exp(-dist_matrix(x_1, x_2)/(epsilon**2))
-
-# Build kernel matrix K
-# K = k(training_data, training_data)
 # %%
 
 
+"""
+Implementation of diffusion maps algorithm
+Approximation of eigenvalues and eigenfunctions of the 0-Laplacian
+uo to a constant scaling factor
+"""
+
 # %%
+# Diffusion maps algorithm
+
 # Normalization function q that corresponds to diagonal matrix Q
 def make_normalization_func(k, x_train):
     def normalized(x):
         y = np.sum(k(x, x_train), axis = 1)
         return y
     return normalized
+
+# Heat kernel function k
+k = lambda x_1, x_2: np.exp(-dist_matrix(x_1, x_2)/(epsilon**2))
+
+# Build kernel matrix K
+# K = k(training_data, training_data)
 
 # Normalized kernel function k_hat
 def make_k_hat(k, q):
@@ -127,11 +147,8 @@ def make_k_hat(k, q):
 q = make_normalization_func(k, training_data)
 k_hat = make_k_hat(k, q)
 K_hat = k_hat(training_data, training_data)
-print(K_hat[:3,:3])
-# %%
+# print(K_hat[:3,:3])
 
-
-# %%
 # Normalization function d that corresponds to diagonal matrix D
 d = make_normalization_func(k_hat, training_data)
 D = d(training_data)
@@ -148,11 +165,8 @@ def make_p(k_hat, d):
 # Build Markov kernel matrix P
 p = make_p(k_hat, d)
 P = p(training_data, training_data)
-print(P[:3,:3])
-# %%
+# print(P[:3,:3])
 
-
-# %%
 # Similarity transformation function s
 def make_s(p, d):
     def s(x, y):
@@ -166,11 +180,9 @@ def make_s(p, d):
 # Build Similarity matrix S
 s = make_s(p, d)
 S = s(training_data, training_data)
-print(S[:3,:3])
-# %%
+# print(S[:3,:3])
 
 
-# %%
 # Solve eigenvalue problem for similarity matrix S
 eigenvalues, eigenvectors = eig(S) 
 index = eigenvalues.argsort()[::-1][:2*I+1]
@@ -182,16 +194,13 @@ lambs_dm = np.empty(2*I+1, dtype = float)
 for i in range(0, 2*I+1):
             lambs_dm[i] = 4*(-np.log(np.real(Lambs[i]))/(epsilon**2)) 
 
-print(lambs_dm)         
-# %%
+# print(lambs_dm)         
 
-
-# %%
 # Normalize eigenfunctions Phi_j
 Phis_normalized = np.empty([N, 2*I+1], dtype = float)
 for j in range(0, 2*I+1):
     Phis_normalized[:, j] = np.real(Phis[:, j])*np.sqrt(N)
-
+# Appeoximate eigenvalues and eigenfunctions for the 0-Laplacian
 def make_varphi(k, x_train, lambs, phis):
     phi_lamb = phis / lambs
     def varphi(x):
@@ -201,10 +210,8 @@ def make_varphi(k, x_train, lambs, phis):
 
 Lambs_normalized = np.power(Lambs, 4)
 varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
-# %%
 
-
-# %%
+# Check approximations for Laplacian eigenbasis agree with true eigenbasis
 # Get x values of the sine wave
 time = u
 time2 = u
@@ -232,11 +239,15 @@ plt.show()
 # %%
 
 
+"""
+SEC approximation
+for pushforward of vector fields on the circle
+"""
+# %%
 # Fourier coefficients F_ak pf F w.r.t. difusion maps eigenvectors Phi_k
 F_ak_dm = (1/N)*np.matmul(F(u),Phis_normalized)
 
 
-# %%
 # Compute c_ijp coefficients
 # Using Monte Carlo integration
 pool = mp.Pool()
@@ -250,11 +261,9 @@ c_mc_dm = pool.starmap(c_func_mc_dm,
                 for p in range(0, 2 * I + 1)])
             
 c_mc_dm = np.reshape(np.array(c_mc_dm), (2 * I + 1, 2 * I + 1, 2 * I + 1))
-print(c_mc_dm[:,3,3])
-# %%
+# print(c_mc_dm[:,3,3])
 
 
-# %%
 # Compute g_ijp Riemannian metric coefficients
 # Using Monte Carlo integration
 g_mc_dm = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
@@ -262,12 +271,9 @@ for i in range(0, 2*I+1):
             for j in range(0, 2*I+1):
                         for p in range(0, 2*I+1):
                                     g_mc_dm[i,j,p] = (lambs_dm[i] + lambs_dm[j] - lambs_dm[p])*c_mc_dm[i,j,p]/2
-
-print(g_mc_dm[:,3,3])
-# %%
+# print(g_mc_dm[:,3,3])
 
 
-# %%
 # Compute G_ijpq entries for the Gram operator and its dual
 # Using Monte Carlo integration
 G_mc_dm = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
@@ -276,6 +282,7 @@ G_mc_dm = np.einsum('ipm, jqm -> ijpq', c_mc_dm, g_mc_dm, dtype = float)
 G_mc_dm = G_mc_dm[:(2*J+1), :(2*K+1), :(2*J+1), :(2*K+1)]
 G_mc_dm = np.reshape(G_mc_dm, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
+# Teuncate singular values of G based on the largest jump
 # threshold = np.amax(lamb)*1e-2 # Threshold value for truncated SVD
 threshold = 1/28
 G_dual_mc_dm = np.linalg.pinv(G_mc_dm, rcond = threshold)
@@ -296,10 +303,9 @@ plt.ylabel('Singular Values')
 plt.title('Singular Values of the Gram Operator G_ijpq (descending order)')
 
 plt.show()
-# %%
 
 
-# %%
+
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
 def monte_carlo_product_dm(Phis, u, N = 800):
     v_an = vF(u)
@@ -336,22 +342,17 @@ for q in range(0, 2*K+1):
 # v_hat_prime_mc_dm = np.reshape(np.array(v_hat_prime_mc_dm), ((2*J+1), (2*K+1)))
 v_hat_prime_mc_dm = np.reshape(v_hat_prime_mc_dm, ((2*J+1)*(2*K+1), 1))
 # print(v_hat_prime_mc_dm[:3,:3])
-# %%
 
 
-# %%
 # Apply dual Gram operator G^+ to obtain v_hat 
 # Using pushforward vF and original vector field v
 # Both with Monte Carlo integration with weights
 v_hat_mc_dm = np.matmul(G_dual_mc_dm, v_hat_prime_mc_dm)
 v_hat_mc_dm = np.reshape(v_hat_mc_dm, (2*J+1, 2*K+1))
-# %%
 
 
-# %%
 # Apply pushforward map F_* of embedding F to v_hat to obtain approximated vector fields
 # Using Monte Carlo integration with weights
-
 # g_mc = g_mc[:(2*K+1), :, :]
 
 g_mc_dm_weighted = np.zeros([2*K+1, 2*I+1, 2*I+1], dtype = float)
@@ -425,6 +426,12 @@ plt.show()
 # %%
 
 
+
+"""
+Solve ODEs in the SEC approximated system
+and compare with the solution in the true system
+"""
+
 # %%
 # ODE solver applied to the SEC approximated vector fields
 # with initial condition specified
@@ -436,9 +443,8 @@ def f_true(t, y):
     dydt = [-np.sin(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0]))]
     return dydt
 
-
 # Define time spans and initial values for the true system
-tspan = np.linspace(0, 10000, num=1000)
+tspan = np.linspace(0, 10, num=1000)
 yinit = [10, 24]
 
 # Solve ODE under the true system
@@ -469,17 +475,15 @@ ax3.plot(sol_true.t, sol_true.y.T[:, 1], color='red')
 ax3.set_title('y-coordinates prediction w.r.t. time t')
 
 plt.show()
-# %%
 
-# %%
+
 # Define derivative function for the SEC approximated system
 def f_sec_mc(t, y):
     dydt = [W_x_mc_dm(y[0], y[1]), W_y_mc_dm(y[0], y[1])]
     return dydt
 
-
 # Define time spans and initial values for the SEC approximated system
-tspan = np.linspace(0, 100, num=100)
+tspan = np.linspace(0, 10, num=1000)
 yinit = [1, 0]
 
 # Solve ODE under the SEC approximated system

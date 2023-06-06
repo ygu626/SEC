@@ -426,7 +426,6 @@ plt.show()
 # %%
 
 
-
 """
 Solve ODEs in the SEC approximated system
 and compare with the solution in the true system
@@ -444,8 +443,8 @@ def f_true(t, y):
     return dydt
 
 # Define time spans and initial values for the true system
-tspan = np.linspace(0, 10, num=1000)
-yinit = [10, 24]
+tspan = np.linspace(0, 10, num=10)
+yinit = [1, 0]
 
 # Solve ODE under the true system
 sol_true = solve_ivp(lambda t, y: f_true(t, y),
@@ -475,6 +474,25 @@ ax3.plot(sol_true.t, sol_true.y.T[:, 1], color='red')
 ax3.set_title('y-coordinates prediction w.r.t. time t')
 
 plt.show()
+
+# %%
+# Quiver plot of the solution to the true system
+X_true = sol_true.y.T[:, 0]
+Y_true = sol_true.y.T[:, -1]
+
+# X, Y = np.meshgrid(x,y) 
+U_true = np.gradient(X_true)  # dx/dx
+V_true = np.gradient(Y_true)  # dx/dx
+
+# This normalizes the arrows so they are all the same length
+# M = np.sqrt(U**2 + V**2)
+# U /= M
+# V /= M
+
+plt.quiver(X_true, Y_true, U_true, V_true)
+plt.xlabel('y1')
+plt.ylabel('y2') 
+# %%
 
 
 # Define derivative function for the SEC approximated system
@@ -528,4 +546,25 @@ ax2.plot(sol_sec_mc.t, sol_sec_mc.y.T[:, 1], color='blue')
 ax2.set_title('y-coordinates prediction w.r.t. time t (true = red, SEC = blue)')
 
 plt.show()
+# %%
+
+
+# %%
+# Quiver plot of the solution to the SEC approximated system
+X_sec = sol_sec_mc.y.T[:, 0]
+Y_sec = sol_sec_mc.y.T[:, -1]
+
+# X, Y = np.meshgrid(x,y) 
+U_sec = np.gradient(X_sec)  # dx/dx
+V_sec = np.gradient(Y_sec)  # dx/dx
+
+
+# This normalizes the arrows so they are all the same length
+# M = np.sqrt(U**2 + V**2)
+# U /= M
+# V /= M
+
+plt.quiver(X_sec, Y_sec, U_sec, V_sec)
+plt.xlabel('y1')
+plt.ylabel('y2') 
 # %%

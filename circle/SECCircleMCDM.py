@@ -222,10 +222,12 @@ varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
 
 
 """
-CHECK DIFFUSION MAPS APPROXIMATION
+Check accuracy of diffusion maps approximation
+fir eigenvalues and eigenfunctions of 0-Laplacian
 """
 
 # Check approximations for Laplacian eigenbasis agree with true eigenbasis
+# by ploting against 
 # Get x values of the sine wave
 time = u
 time2 = u
@@ -282,10 +284,21 @@ c_mc_dm = np.reshape(np.array(c_mc_dm), (2 * I + 1, 2 * I + 1, 2 * I + 1))
 # Compute g_ijp Riemannian metric coefficients
 # Using Monte Carlo integration
 g_mc_dm = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+g_mc_dm_coeff = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+
 for i in range(0, 2*I+1):
             for j in range(0, 2*I+1):
                         for p in range(0, 2*I+1):
-                                    g_mc_dm[i,j,p] = (lambs_dm[i] + lambs_dm[j] - lambs_dm[p])*c_mc_dm[i,j,p]/2
+                                    g_mc_dm_coeff[i,j,p] = (lambs_dm[i] + lambs_dm[j] - lambs_dm[p])/2
+                                    
+g_mc_dm = np.multiply(g_mc_dm_coeff, c_mc_dm)
+
+# g_mc_dm = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+# for i in range(0, 2*I+1):
+#             for j in range(0, 2*I+1):
+#                         for p in range(0, 2*I+1):
+#                                     g_mc_dm[i,j,p] = (lambs_dm[i] + lambs_dm[j] - lambs_dm[p])*c[i,j,p]/2
+         
 # print(g_mc_dm[:,3,3])
 
 
@@ -603,4 +616,3 @@ print(MM.shape)
 print(NN.shape)
 
 # %%
-

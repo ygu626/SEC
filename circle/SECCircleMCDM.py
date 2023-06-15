@@ -257,6 +257,7 @@ plt.show()
 SEC approximation
 for pushforward of vector fields on the circle
 """
+
 # %%
 # Fourier coefficients F_ak pf F w.r.t. difusion maps eigenvectors Phi_k
 F_ak_dm = (1/N)*np.matmul(F(u),Phis_normalized)
@@ -313,12 +314,13 @@ plt.title('Singular Values of the Gram Operator G_ijpq (descending order)')
 
 plt.show()
 
-print(s2_dm)
+# print(s2_dm)
 
 
 # Teuncate singular values of G based based on 1% of the largest singular value
-# threshold = np.amax(lamb)*1e-2 # Threshold value for truncated SVD
-threshold = 1/(0.01*np.max(s2_dm))
+threshold = 1/(0.01*np.max(s2_dm))      # Threshold value for truncated SVD
+
+# Compute duall Gram operator G* using pseudoinverse based on truncated singular values of G
 G_dual_mc_dm = np.linalg.pinv(G_mc_dm, rcond = threshold)
 # G_dual_mc = np.linalg.pinv(G_mc_weighted)
 
@@ -601,3 +603,4 @@ print(MM.shape)
 print(NN.shape)
 
 # %%
+

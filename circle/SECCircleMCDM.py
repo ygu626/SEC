@@ -227,7 +227,8 @@ fir eigenvalues and eigenfunctions of 0-Laplacian
 """
 
 # Check approximations for Laplacian eigenbasis agree with true eigenbasis
-# by ploting against 
+# by ploting against linear combinations of true eigenfunctions 
+
 # Get x values of the sine wave
 time = u
 time2 = u

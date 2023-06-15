@@ -17,13 +17,13 @@ from scipy.integrate import solve_ivp
 
 
 # Parameters
-I = 10          # Inner index for eigenfunctions
+I = 20          # Inner index for eigenfunctions
 J = 5           # Outer index for eigenfunctions
-K = 3           # Index for gradients of eigenfunctions
-n = 8           # Number of approximated tangent vectors
+K = 5           # Index for gradients of eigenfunctions
+n = 8          # Number of approximated tangent vectors
 N = 800         # Number of Monte Carlo training data points 
 
-epsilon = 0.15  # RBF bandwidth parameter
+epsilon = 0.3  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
 
@@ -61,10 +61,18 @@ X_func = lambda theta: np.cos(theta)
 Y_func = lambda theta: np.sin(theta)
 TRAIN_X = np.array(X_func(THETA_LST))
 TRAIN_Y = np.array(Y_func(THETA_LST))
+# TRAIN_X = np.array([-2,-2,-2,-2,-2,-1,-1,-1,-1,-1,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2])
+# TRAIN_Y = np.array([-2,-1,0,1,2,-2,-1,0,1,2,-2,-1,0,1,2,-2,-1,0,1,2,-2,-1,0,1,2])
+
+# train_x = np.linspace(-5,5,10)
+# train_y = np.linspace(-5,5,10)
+# TRAIN_X, TRAIN_Y = np.meshgrid(xx, yy)
+# TRAIN_X, TRAIN_Y = np.array(np.meshgrid(train_x, train_y))
+
 
 TRAIN_V = np.empty([n, 4], dtype = float)
 for i in range(0, n):
-        TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
+    TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
 
 X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
 
@@ -194,7 +202,8 @@ lambs_dm = np.empty(2*I+1, dtype = float)
 for i in range(0, 2*I+1):
             lambs_dm[i] = 4*(-np.log(np.real(Lambs[i]))/(epsilon**2)) 
 
-# print(lambs_dm)         
+print(lambs_dm)         
+# %%
 
 # Normalize eigenfunctions Phi_j
 Phis_normalized = np.empty([N, 2*I+1], dtype = float)
@@ -210,6 +219,11 @@ def make_varphi(k, x_train, lambs, phis):
 
 Lambs_normalized = np.power(Lambs, 4)
 varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
+
+
+"""
+CHECK DIFFUSION MAPS APPROXIMATION
+"""
 
 # Check approximations for Laplacian eigenbasis agree with true eigenbasis
 # Get x values of the sine wave
@@ -282,11 +296,6 @@ G_mc_dm = np.einsum('ipm, jqm -> ijpq', c_mc_dm, g_mc_dm, dtype = float)
 G_mc_dm = G_mc_dm[:(2*J+1), :(2*K+1), :(2*J+1), :(2*K+1)]
 G_mc_dm = np.reshape(G_mc_dm, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
-# Teuncate singular values of G based on the largest jump
-# threshold = np.amax(lamb)*1e-2 # Threshold value for truncated SVD
-threshold = 1/28
-G_dual_mc_dm = np.linalg.pinv(G_mc_dm, rcond = threshold)
-# G_dual_mc = np.linalg.pinv(G_mc_weighted)
 
 # Perform singular value decomposition (SVD) of the Gram operator G
 # and plot these singular values
@@ -303,6 +312,17 @@ plt.ylabel('Singular Values')
 plt.title('Singular Values of the Gram Operator G_ijpq (descending order)')
 
 plt.show()
+
+print(s2_dm)
+
+
+# Teuncate singular values of G based based on 1% of the largest singular value
+# threshold = np.amax(lamb)*1e-2 # Threshold value for truncated SVD
+threshold = 1/(0.01*np.max(s2_dm))
+G_dual_mc_dm = np.linalg.pinv(G_mc_dm, rcond = threshold)
+# G_dual_mc = np.linalg.pinv(G_mc_weighted)
+
+# %%
 
 
 
@@ -380,9 +400,9 @@ def W_y_mc_dm(x, y):
     return np.sum(p_am_mc_dm[1, :]*varphi_xy)
 
 for i in range(0, n):
-            W_theta_x_mc_dm[i] = W_x_mc_dm(TRAIN_X[i], TRAIN_Y[i])
-            W_theta_y_mc_dm[i] = W_y_mc_dm(TRAIN_X[i], TRAIN_Y[i])
-            vector_approx_mc_dm[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x_mc_dm[i], W_theta_y_mc_dm[i]])
+    W_theta_x_mc_dm[i] = W_x_mc_dm(TRAIN_X[i], TRAIN_Y[i])
+    W_theta_y_mc_dm[i] = W_y_mc_dm(TRAIN_X[i], TRAIN_Y[i])
+    vector_approx_mc_dm[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x_mc_dm[i], W_theta_y_mc_dm[i]])
 print(W_theta_x_mc_dm)
 print(W_theta_y_mc_dm)
 
@@ -476,6 +496,8 @@ ax3.set_title('y-coordinates prediction w.r.t. time t')
 plt.show()
 
 # %%
+
+
 # Quiver plot of the solution to the true system
 X_true = sol_true.y.T[:, 0]
 Y_true = sol_true.y.T[:, -1]
@@ -567,4 +589,15 @@ V_sec = np.gradient(Y_sec)  # dx/dx
 plt.quiver(X_sec, Y_sec, U_sec, V_sec)
 plt.xlabel('y1')
 plt.ylabel('y2') 
+# %%
+
+
+# Plot the function approximated function using quiver
+# %%
+xx = np.linspace(-5,5,10)
+yy = np.linspace(-5,5,10)
+MM, NN = np.array(np.meshgrid(xx, yy))
+print(MM.shape)
+print(NN.shape)
+
 # %%

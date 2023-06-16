@@ -6,6 +6,8 @@ Given pushforward of tangent vectors on the circle
 and determinstically sampled Monte Carlo points on the circle
 """
 
+
+
 # %%
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,11 +29,14 @@ epsilon = 0.3  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
 
+
+
 """
 Training data set
 with pushforward of vector fields v on the circle
 and Embedding map F with pushforward vF
 """
+
 
 # Deterministically sampled Monte Carlo training data points
 def monte_carlo_points(a = 0, b = 2*np.pi, N = 800):
@@ -85,9 +90,12 @@ F = lambda theta: np.array([np.cos(theta), np.sin(theta)])
 vF = lambda theta: np.array([-np.sin(theta), np.cos(theta)])
 
 
+
+
 """
 Functions utilized in the following program
 """
+
 
 # Double and triple products of functions
 def double_prod(f, g):
@@ -119,11 +127,13 @@ def dist_matrix(x_1,x_2):
 # %%
 
 
+
 """
 Implementation of diffusion maps algorithm
 Approximation of eigenvalues and eigenfunctions of the 0-Laplacian
 uo to a constant scaling factor
 """
+
 
 # %%
 # Diffusion maps algorithm
@@ -209,6 +219,7 @@ print(lambs_dm)
 Phis_normalized = np.empty([N, 2*I+1], dtype = float)
 for j in range(0, 2*I+1):
     Phis_normalized[:, j] = np.real(Phis[:, j])*np.sqrt(N)
+
 # Appeoximate eigenvalues and eigenfunctions for the 0-Laplacian
 def make_varphi(k, x_train, lambs, phis):
     phi_lamb = phis / lambs
@@ -217,8 +228,10 @@ def make_varphi(k, x_train, lambs, phis):
         return y
     return varphi
 
+# Produce continuous extentions varphi_j for the eigenfunctions Phi_j
 Lambs_normalized = np.power(Lambs, 4)
 varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
+
 
 
 """
@@ -256,10 +269,12 @@ plt.show()
 # %%
 
 
+
 """
 SEC approximation
 for pushforward of vector fields on the circle
 """
+
 
 # %%
 # Fourier coefficients F_ak pf F w.r.t. difusion maps eigenvectors Phi_k
@@ -462,15 +477,22 @@ plt.show()
 # %%
 
 
+
 """
 Solve ODEs in the SEC approximated system
 and compare with the solution in the true system
 """
 
+
 # %%
 # ODE solver applied to the SEC approximated vector fields
 # with initial condition specified
 # and the true system
+
+
+"""
+True System
+"""
 
 # Define derivative function for the true system
 def f_true(t, y):
@@ -479,7 +501,7 @@ def f_true(t, y):
     return dydt
 
 # Define time spans and initial values for the true system
-tspan = np.linspace(0, 10, num=10)
+tspan = np.linspace(0, 10, num=1000)
 yinit = [1, 0]
 
 # Solve ODE under the true system
@@ -514,24 +536,9 @@ plt.show()
 # %%
 
 
-# Quiver plot of the solution to the true system
-X_true = sol_true.y.T[:, 0]
-Y_true = sol_true.y.T[:, -1]
-
-# X, Y = np.meshgrid(x,y) 
-U_true = np.gradient(X_true)  # dx/dx
-V_true = np.gradient(Y_true)  # dx/dx
-
-# This normalizes the arrows so they are all the same length
-# M = np.sqrt(U**2 + V**2)
-# U /= M
-# V /= M
-
-plt.quiver(X_true, Y_true, U_true, V_true)
-plt.xlabel('y1')
-plt.ylabel('y2') 
-# %%
-
+"""
+SEC Approximated System
+"""
 
 # Define derivative function for the SEC approximated system
 def f_sec_mc(t, y):
@@ -584,36 +591,4 @@ ax2.plot(sol_sec_mc.t, sol_sec_mc.y.T[:, 1], color='blue')
 ax2.set_title('y-coordinates prediction w.r.t. time t (true = red, SEC = blue)')
 
 plt.show()
-# %%
-
-
-# %%
-# Quiver plot of the solution to the SEC approximated system
-X_sec = sol_sec_mc.y.T[:, 0]
-Y_sec = sol_sec_mc.y.T[:, -1]
-
-# X, Y = np.meshgrid(x,y) 
-U_sec = np.gradient(X_sec)  # dx/dx
-V_sec = np.gradient(Y_sec)  # dx/dx
-
-
-# This normalizes the arrows so they are all the same length
-# M = np.sqrt(U**2 + V**2)
-# U /= M
-# V /= M
-
-plt.quiver(X_sec, Y_sec, U_sec, V_sec)
-plt.xlabel('y1')
-plt.ylabel('y2') 
-# %%
-
-
-# Plot the function approximated function using quiver
-# %%
-xx = np.linspace(-5,5,10)
-yy = np.linspace(-5,5,10)
-MM, NN = np.array(np.meshgrid(xx, yy))
-print(MM.shape)
-print(NN.shape)
-
 # %%

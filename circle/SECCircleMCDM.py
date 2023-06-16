@@ -277,7 +277,7 @@ for pushforward of vector fields on the circle
 
 
 # %%
-# Fourier coefficients F_ak pf F w.r.t. difusion maps eigenvectors Phi_k
+# Fourier coefficients F_ak pf F w.r.t. difusion maps eigenvectors Phi_j
 F_ak_dm = (1/N)*np.matmul(F(u),Phis_normalized)
 
 
@@ -346,8 +346,9 @@ plt.show()
 # print(s2_dm)
 
 
-# Teuncate singular values of G based based on 1% of the largest singular value
+# Teuncate singular values of G based based on 1% of the largest singular valuecof G
 threshold = 1/(0.01*np.max(s2_dm))      # Threshold value for truncated SVD
+
 
 # Compute duall Gram operator G* using pseudoinverse based on truncated singular values of G
 G_dual_mc_dm = np.linalg.pinv(G_mc_dm, rcond = threshold)
@@ -355,6 +356,12 @@ G_dual_mc_dm = np.linalg.pinv(G_mc_dm, rcond = threshold)
 
 # %%
 
+
+"""
+Applying analysis operator T to the pushforwaed F_*v (instead of the vector field v)
+using Monte Carlo integration
+to obtain v_hat'
+"""
 
 
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an

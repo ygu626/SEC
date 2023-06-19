@@ -484,12 +484,20 @@ plt.show()
 # %%
 
 
-# %%
 """
 Plot the pushfoward map F_* of the embedding F
 as a quiver plot in R62 to capture tbe bias in SEC approximation
 usibg meshgrid as the training data set
 """
+
+# %%
+x_train_new = np.linspace(-5,5,10)
+y_train_new = np.linspace(-5,5,10)
+
+X_TRAIN_NEW, Y_TRAIN_NEW = np.meshgrid(x_train_new, y_train_new)
+
+print(X_TRAIN_NEW.shape)
+print(Y_TRAIN_NEW.shape)
 # %%
 
 

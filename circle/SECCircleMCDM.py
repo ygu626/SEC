@@ -409,7 +409,7 @@ v_hat_mc_dm = np.matmul(G_dual_mc_dm, v_hat_prime_mc_dm)
 v_hat_mc_dm = np.reshape(v_hat_mc_dm, (2*J+1, 2*K+1))
 
 
-# Apply pushforward map F_* of embedding F to v_hat to obtain approximated vector fields
+# Apply pushforward map F_* of the embedding F to v_hat to obtain approximated vector fields
 # Using Monte Carlo integration with weights
 # g_mc = g_mc[:(2*K+1), :, :]
 
@@ -481,6 +481,15 @@ ax2.set_ylabel("Y-coordinates of Vector Fields")
 ax2.set_title('Y-coordinates w.r.t. Angle Theta (true = black, SEC = red)')
 
 plt.show()
+# %%
+
+
+# %%
+"""
+Plot the pushfoward map F_* of the embedding F
+as a quiver plot in R62 to capture tbe bias in SEC approximation
+usibg meshgrid as the training data set
+"""
 # %%
 
 

@@ -25,7 +25,7 @@ K = 5           # Index for gradients of eigenfunctions
 n = 8          # Number of approximated tangent vectors
 N = 800         # Number of Monte Carlo training data points 
 
-epsilon = 0.3  # RBF bandwidth parameter
+epsilon = 0.25  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
 
@@ -66,13 +66,6 @@ X_func = lambda theta: np.cos(theta)
 Y_func = lambda theta: np.sin(theta)
 TRAIN_X = np.array(X_func(THETA_LST))
 TRAIN_Y = np.array(Y_func(THETA_LST))
-# TRAIN_X = np.array([-2,-2,-2,-2,-2,-1,-1,-1,-1,-1,0,0,0,0,0,1,1,1,1,1,2,2,2,2,2])
-# TRAIN_Y = np.array([-2,-1,0,1,2,-2,-1,0,1,2,-2,-1,0,1,2,-2,-1,0,1,2,-2,-1,0,1,2])
-
-# train_x = np.linspace(-5,5,10)
-# train_y = np.linspace(-5,5,10)
-# TRAIN_X, TRAIN_Y = np.meshgrid(xx, yy)
-# TRAIN_X, TRAIN_Y = np.array(np.meshgrid(train_x, train_y))
 
 
 TRAIN_V = np.empty([n, 4], dtype = float)
@@ -83,6 +76,7 @@ X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
 
 print(U_1)
 print(V_1)
+
 
 
 # Embedding map F and its pushforward applied vF to vector field v
@@ -347,7 +341,7 @@ plt.show()
 
 
 # Teuncate singular values of G based based on 1% of the largest singular valuecof G
-threshold = 1/(0.01*np.max(s2_dm))      # Threshold value for truncated SVD
+threshold = 1/(0.04*np.max(s2_dm))      # Threshold value for truncated SVD
 
 
 # Compute duall Gram operator G* using pseudoinverse based on truncated singular values of G
@@ -492,10 +486,10 @@ usibg meshgrid as the training data set
 """
 
 # %%
-m =10           # Square root of number of points used in quiver plot of F_*
+m = 10           # Square root of number of points used in quiver plot of F_*
 
-x_train_new = np.linspace(-5,5,m)
-y_train_new = np.linspace(-5,5,m)
+x_train_new = np.linspace(-5,5, m)
+y_train_new = np.linspace(-5, 5, m)
 
 X_TRAIN_NEW, Y_TRAIN_NEW = np.meshgrid(x_train_new, y_train_new)
 
@@ -514,19 +508,16 @@ for i in range(0, m):
 U_TRAIN_NEW = W_theta_x_new
 V_TRAIN_NEW = W_theta_y_new
 
-plt.quiver(X_TRAIN_NEW, Y_TRAIN_NEW, U_TRAIN_NEW, V_TRAIN_NEW)
-plt.show()
 
 plt.figure()
 ax = plt.gca()
 plt.quiver(X_TRAIN_NEW, Y_TRAIN_NEW, U_TRAIN_NEW, V_TRAIN_NEW)
 
-ax.set_xlim([-6,6])
-ax.set_ylim([-6,6])
+ax.set_xlim([-6.5,6.5])
+ax.set_ylim([-6.5,6.5])
 ax.set_title('Quiver Plot of the SEC Approximated function F: R2-->R2')
 
 plt.show()
-
 # %%
 
 
@@ -537,7 +528,6 @@ and compare with the solution in the true system
 """
 
 
-# %%
 # ODE solver applied to the SEC approximated vector fields
 # with initial condition specified
 # and the true system
@@ -546,7 +536,7 @@ and compare with the solution in the true system
 """
 True System
 """
-
+# %%
 # Define derivative function for the true system
 def f_true(t, y):
     # dydt = [-np.sin(np.angle(y[0]+(1j)*y[1])), np.cos(np.angle(y[0]+(1j)*y[1]))]
@@ -555,7 +545,7 @@ def f_true(t, y):
 
 # Define time spans and initial values for the true system
 tspan = np.linspace(0, 10, num=1000)
-yinit = [1, 0]
+yinit = [4, -3]
 
 # Solve ODE under the true system
 sol_true = solve_ivp(lambda t, y: f_true(t, y),
@@ -593,6 +583,7 @@ plt.show()
 SEC Approximated System
 """
 
+# %%
 # Define derivative function for the SEC approximated system
 def f_sec_mc(t, y):
     dydt = [W_x_mc_dm(y[0], y[1]), W_y_mc_dm(y[0], y[1])]
@@ -600,7 +591,7 @@ def f_sec_mc(t, y):
 
 # Define time spans and initial values for the SEC approximated system
 tspan = np.linspace(0, 10, num=1000)
-yinit = [1, 0]
+yinit = [4, -3]
 
 # Solve ODE under the SEC approximated system
 sol_sec_mc = solve_ivp(lambda t, y: f_sec_mc(t, y),

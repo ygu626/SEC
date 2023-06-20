@@ -484,6 +484,7 @@ plt.show()
 # %%
 
 
+
 """
 Plot the pushfoward map F_* of the embedding F
 as a quiver plot in R62 to capture tbe bias in SEC approximation
@@ -491,13 +492,41 @@ usibg meshgrid as the training data set
 """
 
 # %%
-x_train_new = np.linspace(-5,5,10)
-y_train_new = np.linspace(-5,5,10)
+m =10           # Square root of number of points used in quiver plot of F_*
+
+x_train_new = np.linspace(-5,5,m)
+y_train_new = np.linspace(-5,5,m)
 
 X_TRAIN_NEW, Y_TRAIN_NEW = np.meshgrid(x_train_new, y_train_new)
 
-print(X_TRAIN_NEW.shape)
-print(Y_TRAIN_NEW.shape)
+# print(X_TRAIN_NEW.shape)
+# print(Y_TRAIN_NEW.shape)
+
+W_theta_x_new = np.zeros([m, m], dtype = float)
+W_theta_y_new = np.zeros([m, m], dtype = float)
+
+for i in range(0, m):
+    for j in range(0, m):
+        W_theta_x_new[i, j] = W_x_mc_dm(X_TRAIN_NEW[i, j], Y_TRAIN_NEW[i, j])
+        W_theta_y_new[i, j] = W_y_mc_dm(X_TRAIN_NEW[i, i], Y_TRAIN_NEW[i, j])
+        # vector_approx_mc_dm[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x_mc_dm[i], W_theta_y_mc_dm[i]])
+        
+U_TRAIN_NEW = W_theta_x_new
+V_TRAIN_NEW = W_theta_y_new
+
+plt.quiver(X_TRAIN_NEW, Y_TRAIN_NEW, U_TRAIN_NEW, V_TRAIN_NEW)
+plt.show()
+
+plt.figure()
+ax = plt.gca()
+plt.quiver(X_TRAIN_NEW, Y_TRAIN_NEW, U_TRAIN_NEW, V_TRAIN_NEW)
+
+ax.set_xlim([-6,6])
+ax.set_ylim([-6,6])
+ax.set_title('Quiver Plot of the SEC Approximated function F: R2-->R2')
+
+plt.show()
+
 # %%
 
 

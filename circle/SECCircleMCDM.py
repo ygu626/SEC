@@ -486,10 +486,10 @@ usibg meshgrid as the training data set
 """
 
 # %%
-m = 10           # Square root of number of points used in quiver plot of F_*
+m = 20           # Square root of number of points used in quiver plot of F_*
 
-x_train_new = np.linspace(-5,5, m)
-y_train_new = np.linspace(-5, 5, m)
+x_train_new = np.linspace(-1.5,1.5, m)
+y_train_new = np.linspace(-1.5, 1.5, m)
 
 X_TRAIN_NEW, Y_TRAIN_NEW = np.meshgrid(x_train_new, y_train_new)
 
@@ -502,7 +502,7 @@ W_theta_y_new = np.zeros([m, m], dtype = float)
 for i in range(0, m):
     for j in range(0, m):
         W_theta_x_new[i, j] = W_x_mc_dm(X_TRAIN_NEW[i, j], Y_TRAIN_NEW[i, j])
-        W_theta_y_new[i, j] = W_y_mc_dm(X_TRAIN_NEW[i, i], Y_TRAIN_NEW[i, j])
+        W_theta_y_new[i, j] = W_y_mc_dm(X_TRAIN_NEW[i, j], Y_TRAIN_NEW[i, j])
         # vector_approx_mc_dm[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x_mc_dm[i], W_theta_y_mc_dm[i]])
         
 U_TRAIN_NEW = W_theta_x_new
@@ -513,8 +513,8 @@ plt.figure()
 ax = plt.gca()
 plt.quiver(X_TRAIN_NEW, Y_TRAIN_NEW, U_TRAIN_NEW, V_TRAIN_NEW)
 
-ax.set_xlim([-6.5,6.5])
-ax.set_ylim([-6.5,6.5])
+ax.set_xlim([-2,2])
+ax.set_ylim([-2,2])
 ax.set_title('Quiver Plot of the SEC Approximated function F: R2-->R2')
 
 plt.show()
@@ -545,7 +545,7 @@ def f_true(t, y):
 
 # Define time spans and initial values for the true system
 tspan = np.linspace(0, 10, num=1000)
-yinit = [4, -3]
+yinit = [1, 0]
 
 # Solve ODE under the true system
 sol_true = solve_ivp(lambda t, y: f_true(t, y),
@@ -591,7 +591,7 @@ def f_sec_mc(t, y):
 
 # Define time spans and initial values for the SEC approximated system
 tspan = np.linspace(0, 10, num=1000)
-yinit = [4, -3]
+yinit = [0.9, 0]
 
 # Solve ODE under the SEC approximated system
 sol_sec_mc = solve_ivp(lambda t, y: f_sec_mc(t, y),

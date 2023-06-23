@@ -28,6 +28,7 @@ N = 800         # Number of Monte Carlo training data points
 epsilon = 0.25  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
+c = 0.5         # Component function parameter for vector field v
 
 
 
@@ -82,6 +83,13 @@ print(V_1)
 # Embedding map F and its pushforward applied vF to vector field v
 F = lambda theta: np.array([np.cos(theta), np.sin(theta)])
 vF = lambda theta: np.array([-np.sin(theta), np.cos(theta)])
+
+# Component functions as part of the vector v\field v
+f1 = lambda theta: 1 + c*np.cos(theta)
+f2 = lambda theta: np.exp(c*np.cos(theta))                  # Jump function
+
+v1F = lambda theta: np.array([f1*(-np.sin(theta)), f1&(np.cos(theta))])
+v2F = lambda theta: np.array([f2*(-np.sin(theta)), f2*(np.cos(theta))])
 
 
 

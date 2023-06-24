@@ -28,7 +28,7 @@ N = 800         # Number of Monte Carlo training data points
 epsilon = 0.25  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
-c = 0.5         # Component function parameter for vector field v
+c = 2         # Component function parameter for vector field v
 
 
 
@@ -82,14 +82,14 @@ print(V_1)
 
 # Embedding map F and its pushforward applied vF to vector field v
 F = lambda theta: np.array([np.cos(theta), np.sin(theta)])
-vF = lambda theta: np.array([-np.sin(theta), np.cos(theta)])
+v1F = lambda theta: np.array([-np.sin(theta), np.cos(theta)])
+v2F = lambda theta: np.array([-np.sin(theta) - c*np.sin(theta)*np.cos(theta), np.cos(theta) + c*np.cos(theta)*np.cos(theta)])
+v3F = lambda theta: np.array([-np.exp(c*np.cos(theta))*np.sin(theta), np.exp(c*np.cos(theta))*np.cos(theta)])
+
 
 # Component functions as part of the vector v\field v
-f1 = lambda theta: 1 + c*np.cos(theta)
-f2 = lambda theta: np.exp(c*np.cos(theta))                  # Jump function
-
-v1F = lambda theta: np.array([f1*(-np.sin(theta)), f1&(np.cos(theta))])
-v2F = lambda theta: np.array([f2*(-np.sin(theta)), f2*(np.cos(theta))])
+# f1 = lambda theta: 1 + c*np.cos(theta)
+# f2 = lambda theta: np.exp(c*np.cos(theta))                  # Jump function
 
 
 
@@ -324,7 +324,6 @@ g_mc_dm = np.multiply(g_mc_dm_coeff, c_mc_dm)
 # Using Monte Carlo integration
 G_mc_dm = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
 G_mc_dm = np.einsum('ipm, jqm -> ijpq', c_mc_dm, g_mc_dm, dtype = float)
-
 G_mc_dm = G_mc_dm[:(2*J+1), :(2*K+1), :(2*J+1), :(2*K+1)]
 G_mc_dm = np.reshape(G_mc_dm, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
@@ -368,7 +367,7 @@ to obtain v_hat'
 
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
 def monte_carlo_product_dm(Phis, u, N = 800):
-    v_an = vF(u)
+    v_an = v3F(u)
     integral = (1/N)*np.sum(Phis*v_an, axis = 1)
     
     return integral

@@ -25,7 +25,7 @@ K = 5           # Index for gradients of eigenfunctions
 n = 8          # Number of approximated tangent vectors
 N = 800         # Number of Monte Carlo training data points 
 
-epsilon = 0.25  # RBF bandwidth parameter
+epsilon = 0.15  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
 c = 2         # Component function parameter for vector field v
@@ -71,7 +71,9 @@ TRAIN_Y = np.array(Y_func(THETA_LST))
 
 TRAIN_V = np.empty([n, 4], dtype = float)
 for i in range(0, n):
-    TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
+    # TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
+    TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i] - 2*TRAIN_Y[i]*TRAIN_X[i], TRAIN_X[i] + 2*TRAIN_X[i]*TRAIN_X[i]])
+    # TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -np.exp(2*TRAIN_X[i])*TRAIN_Y[i], np.exp(2*TRAIN_X[i])*TRAIN_X[i]])
 
 X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
 
@@ -367,7 +369,7 @@ to obtain v_hat'
 
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
 def monte_carlo_product_dm(Phis, u, N = 800):
-    v_an = v3F(u)
+    v_an = v2F(u)
     integral = (1/N)*np.sum(Phis*v_an, axis = 1)
     
     return integral

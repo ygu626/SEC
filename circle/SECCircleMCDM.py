@@ -71,8 +71,8 @@ TRAIN_Y = np.array(Y_func(THETA_LST))
 
 TRAIN_V = np.empty([n, 4], dtype = float)
 for i in range(0, n):
-    # TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
-    TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i] - 2*TRAIN_Y[i]*TRAIN_X[i], TRAIN_X[i] + 2*TRAIN_X[i]*TRAIN_X[i]])
+    TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
+    # TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i] - 2*TRAIN_Y[i]*TRAIN_X[i], TRAIN_X[i] + 2*TRAIN_X[i]*TRAIN_X[i]])
     # TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -np.exp(2*TRAIN_X[i])*TRAIN_Y[i], np.exp(2*TRAIN_X[i])*TRAIN_X[i]])
 
 X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
@@ -82,7 +82,7 @@ print(V_1)
 
 
 
-# Embedding map F and its pushforward applied vF to vector field v
+# Embedding map F and its pushforward F_* applied to vector field v
 F = lambda theta: np.array([np.cos(theta), np.sin(theta)])
 v1F = lambda theta: np.array([-np.sin(theta), np.cos(theta)])
 v2F = lambda theta: np.array([-np.sin(theta) - c*np.sin(theta)*np.cos(theta), np.cos(theta) + c*np.cos(theta)*np.cos(theta)])
@@ -240,7 +240,7 @@ varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
 
 """
 Check accuracy of diffusion maps approximation
-fir eigenvalues and eigenfunctions of 0-Laplacian
+for eigenvalues and eigenfunctions of 0-Laplacian
 """
 
 # Check approximations for Laplacian eigenbasis agree with true eigenbasis

@@ -1,7 +1,8 @@
 """
 Spectral Exterior Calculus (SEC)
-Circle S1 Example
-Approximations of vector fields on the cirlce
+2-torus T2 Example (Roration)
+Approximations of vector fields on the 2-torus
+usng donut e bedding into R^3
 Given pushforward of tangent vectors on the circle
 and determinstically sampled Monte Carlo points on the circle
 """
@@ -19,63 +20,105 @@ from scipy.integrate import solve_ivp
 
 
 # Parameters
-I = 20          # Inner index for eigenfunctions
+I = 10          # Inner index for eigenfunctions
 J = 5           # Outer index for eigenfunctions
-K = 5           # Index for gradients of eigenfunctions
+K = 3           # Index for gradients of eigenfunctions
 n = 8          # Number of approximated tangent vectors
 N = 800         # Number of Monte Carlo training data points 
 
-epsilon = 0.25  # RBF bandwidth parameter
+epsilon = 0.15  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
-
+a = 1           # Radius of the latitude circle of the torus
+b = 1           # Radius of the meridian circle of the torus
 
 
 """
 Training data set
-with pushforward of vector fields v on the circle
-and Embedding map F with pushforward vF
+with pushforward of vector fields v on the torus
+and smbedding map F with pushforward F_*v = vF
 """
 
 
 # Deterministically sampled Monte Carlo training data points
-def monte_carlo_points(a = 0, b = 2*np.pi, N = 800):
-    u = np.zeros(N)
+# for two circles *latotude and meridian) of radius a and b
+def monte_carlo_points(start_pt = 0, end_pt = 2*np.pi, N = 800):
+    u_a = np.zeros(N)
+    u_b = np.zeros(N)
+    
     subsets = np.arange(0, N+1, N/400)
     for i in range(0, 400):
         start = int(subsets[i])
         end = int(subsets[i+1])
-        u[start:end] = random.uniform(low = (i/400)*b, high = ((i+1)/400)*b, size = end - start)
-    random.shuffle(u)
+        u_a[start:end] = random.uniform(low = (i/400)*end_pt, high = ((i+1)/400)*end_pt, size = end - start)
+        u_b[start:end] = random.uniform(low = (i/400)*end_pt, high = ((i+1)/400)*end_pt, size = end - start)
     
-    training_data = np.empty([2, N], dtype = float)
+    random.shuffle(u_a)
+    random.shuffle(u_b)
+    
+    training_data_a = np.empty([2, N], dtype = float)
+    training_data_b = np.empty([2, N], dtype = float)
+    
     for j in range(0, N):
-            training_data[:, j] = np.array([np.cos(u[j]), np.sin(u[j])])
+            training_data_a[:, j] = np.array([a*np.cos(u_a[j]), a*np.sin(u_a[j])])
+            training_data_b[:, j] = np.array([b*np.cos(u_b[j]), b*np.sin(u_b[j])])
     
-    return u, training_data
+    return u_a, u_b, training_data_a, training_data_b
 
-u, training_data = monte_carlo_points()
-plt.scatter(training_data[0,:], training_data[1,:])
-plt.show
+u_a, u_b, training_data_a, training_data_b = monte_carlo_points()
+
+sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+
+ax1.scatter(x = training_data_a[0,:], y = training_data_a[1,:], color = 'green')
+ax1.set_xlim([-5,5])
+ax1.set_ylim([-5,5])
+ax1.set_title('Monte Carlo Sampled Latitude Circle with Radius a')
+
+ax2.scatter(x = training_data_b[0,:], y = training_data_b[1,:], color = 'orange')
+ax2.set_xlim([-5,5])
+ax2.set_ylim([-5,5])
+ax2.set_title('Monte Carlo Sampled Meridian Circle with Radius b')
+
+plt.show()
+# %%
 
 
-# n pushforward of vector field v ("arrows") on the circle
-# given points (x, y) specified by angle theat on the circle
+# %%
+# n pushforward of vector field v ("arrows") on the torus
+# given points (x, y, z) specified by angle theta on the meridian circle and angle rho on the latitude circle
 THETA_LST = list(np.arange(0, 2*np.pi, np.pi/(n/2)))
-X_func = lambda theta: np.cos(theta)
-Y_func = lambda theta: np.sin(theta)
-TRAIN_X = np.array(X_func(THETA_LST))
-TRAIN_Y = np.array(Y_func(THETA_LST))
+RHO_LST = list(np.arange(0, 2*np.pi, np.pi/(n/2)))
+
+X_func = lambda theta, rho: (a + b*np.cos(theta))*np.cos(rho)
+Y_func = lambda theta, rho: (a + b*np.cos(theta))*np.sin(rho)
+Z_func = lambda theta: b*np.sin(theta)
+
+X_func_dtheta = lambda theta, rho: -b*np.sin(theta)*np.cos(rho)
+X_func_drho = lambda theta, rho: -(a + b*np.cos(theta))*np.sin(rho)
+Y_func_dtheta = lambda theta, rho: -b*np.sin(theta)*np.sin(rho)
+Y_func_drho = lambda theta rho: (a + b*np.cos(theta))*np.cos(rho)
+Z_func_dtheta = lambda theta: b*np.cos(theta)
+Z_func_drho = lambda theta: 0
 
 
-TRAIN_V = np.empty([n, 4], dtype = float)
+TRAIN_X = np.array(X_func(THETA_LST, RHO_LST))
+TRAIN_Y = np.array(Y_func(THETA_LST, RHO_LST))
+TRAIN_Z = np.array([Z_func(THETA_LST)])
+
+TRAIN_X_DERIVATIVE = X_func_dtheta((THETA_LST, RHO_LST)) + X_func_drho((THETA_LST, RHO_LST))
+TRAIN_Y_DERIVATIVE = Y_func_dtheta((THETA_LST, RHO_LST)) + Y_func_drho((THETA_LST, RHO_LST))
+TRAIN_Z_DERIVATIVE = Z_func_dtheta((THETA_LST)) + Z_func_drho((THETA_LST)
+
+
+TRAIN_V = np.empty([n, 6], dtype = float)
 for i in range(0, n):
-    TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
+    TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], TRAIN_X_DERIVATIVE[i], TRAIN_Y_DERIVATIVE[i], TRAIN_Z_DERIVATIVE[i]])
 
-X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
+X_1, Y_1, Z_1 U, V_1, W_1 = zip(*TRAIN_V)
 
 print(U_1)
 print(V_1)
+print(W_1)
 
 
 

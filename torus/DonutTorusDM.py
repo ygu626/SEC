@@ -12,6 +12,7 @@ and determinstically sampled Monte Carlo points on the circle
 # %%
 import matplotlib.pyplot as plt
 import numpy as np
+import numdifftools as nd
 from numpy import random
 from numpy.linalg import eig as eig
 import multiprocess as mp
@@ -99,11 +100,21 @@ x = X_func(THETA, RHO)
 y = Y_func(THETA, RHO)
 z = Z_func(THETA)
 
+# def tangent_plane(f, x0, y0, x, u):
+#    gradient = nd.Gradient(f)([x0, y0])
+#    z0 = f(x0, y0)
+#    return z0 + gradient[0]*(x-x0) + gradient[1]*(y-y0)
+    
+
+z_xy = (-((np.sqrt(x**2 + y**2) - a)**2 -b**2))
+
+
 fig = plt.figure()
 
 ax1 = fig.add_subplot(121, projection='3d')
 ax1.set_zlim(-3,3)
 ax1.plot_surface(x, y, z, rstride=5, cstride=5, color='k', edgecolors='w')
+# ax1.plot_surface(x, y, tangent_plane(z_xy, 1, 0, x, y), color='green')
 ax1.view_init(36, 26)
 
 ax2 = fig.add_subplot(122, projection='3d')

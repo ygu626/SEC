@@ -28,7 +28,7 @@ N = 800         # Number of Monte Carlo training data points
 epsilon = 0.15  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
-c = 2         # Component function parameter for vector field v
+c = 1.5         # Component function parameter for vector field v
 
 
 
@@ -369,7 +369,7 @@ to obtain v_hat'
 
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
 def monte_carlo_product_dm(Phis, u, N = 800):
-    v_an = v2F(u)
+    v_an = v3F(u)
     integral = (1/N)*np.sum(Phis*v_an, axis = 1)
     
     return integral
@@ -495,7 +495,7 @@ usibg meshgrid as the training data set
 """
 
 # %%
-m = 20           # Square root of number of points used in quiver plot of F_*
+m = 20           #Square root of number of points used in quiver plot of F_*
 
 x_train_new = np.linspace(-1.5,1.5, m)
 y_train_new = np.linspace(-1.5, 1.5, m)
@@ -542,19 +542,23 @@ and compare with the solution in the true system
 # and the true system
 
 
+# %%
 """
 True System
 """
-# %%
+
+
 # Define derivative function for the true system
 def f_true(t, y):
     # dydt = [-np.sin(np.angle(y[0]+(1j)*y[1])), np.cos(np.angle(y[0]+(1j)*y[1]))]
-    dydt = [-np.sin(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0]))]
+    # dydt = [-np.sin(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0]))]
+    # dydt = [-np.sin(np.arctan2(y[1], y[0])) - c*np.sin(np.arctan2(y[1], y[0]))*np.cos(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0])) + c*(np.cos(np.arctan2(y[1], y[0]))**2)]
+    dydt = [-np.exp(c*np.cos(np.arctan2(y[1], y[0])))*np.sin(np.arctan2(y[1], y[0])), np.exp(c*np.cos(np.arctan2(y[1], y[0])))*np.cos(np.arctan2(y[1], y[0]))]
     return dydt
 
 # Define time spans and initial values for the true system
 tspan = np.linspace(0, 10, num=1000)
-yinit = [1, 0]
+yinit = [1.2, 0.1]
 
 # Solve ODE under the true system
 sol_true = solve_ivp(lambda t, y: f_true(t, y),
@@ -584,23 +588,25 @@ ax3.plot(sol_true.t, sol_true.y.T[:, 1], color='red')
 ax3.set_title('y-coordinates prediction w.r.t. time t')
 
 plt.show()
-
 # %%
 
 
+# %%
 """
 SEC Approximated System
 """
 
-# %%
+
 # Define derivative function for the SEC approximated system
 def f_sec_mc(t, y):
-    dydt = [W_x_mc_dm(y[0], y[1]), W_y_mc_dm(y[0], y[1])]
+    # dydt = [W_x_mc_dm(y[0], y[1]), W_y_mc_dm(y[0], y[1])]
+    # dydt = [-np.sin(np.arctan2(y[1], y[0])) - c*np.sin(np.arctan2(y[1], y[0]))*np.cos(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0])) + c*(np.cos(np.arctan2(y[1], y[0]))**2)]
+    dydt = [-np.exp(c*np.cos(np.arctan2(y[1], y[0])))*np.sin(np.arctan2(y[1], y[0])), np.exp(c*np.cos(np.arctan2(y[1], y[0])))*np.cos(np.arctan2(y[1], y[0]))]
     return dydt
 
 # Define time spans and initial values for the SEC approximated system
 tspan = np.linspace(0, 10, num=1000)
-yinit = [0.9, 0]
+yinit = [1, 0]
 
 # Solve ODE under the SEC approximated system
 sol_sec_mc = solve_ivp(lambda t, y: f_sec_mc(t, y),

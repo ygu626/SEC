@@ -25,7 +25,7 @@ K = 5           # Index for gradients of eigenfunctions
 n = 8          # Number of approximated tangent vectors
 N = 800         # Number of Monte Carlo training data points 
 
-epsilon = 0.15  # RBF bandwidth parameter
+epsilon = 0.25  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
 c = 1.5         # Component function parameter for vector field v
@@ -71,8 +71,8 @@ TRAIN_Y = np.array(Y_func(THETA_LST))
 
 TRAIN_V = np.empty([n, 4], dtype = float)
 for i in range(0, n):
-    TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
-    # TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i] - 2*TRAIN_Y[i]*TRAIN_X[i], TRAIN_X[i] + 2*TRAIN_X[i]*TRAIN_X[i]])
+    # TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
+    TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i] - 2*TRAIN_Y[i]*TRAIN_X[i], TRAIN_X[i] + 2*TRAIN_X[i]*TRAIN_X[i]])
     # TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -np.exp(2*TRAIN_X[i])*TRAIN_Y[i], np.exp(2*TRAIN_X[i])*TRAIN_X[i]])
 
 X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
@@ -85,7 +85,7 @@ print(V_1)
 # Embedding map F and its pushforward F_* applied to vector field v
 F = lambda theta: np.array([np.cos(theta), np.sin(theta)])
 v1F = lambda theta: np.array([-np.sin(theta), np.cos(theta)])
-v2F = lambda theta: np.array([-np.sin(theta) - c*np.sin(theta)*np.cos(theta), np.cos(theta) + c*np.cos(theta)*np.cos(theta)])
+v2F = lambda theta: np.array([-np.sin(theta) - c*np.sin(theta)*np.cos(theta), np.cos(theta) + c*(np.cos(theta))**2])
 v3F = lambda theta: np.array([-np.exp(c*np.cos(theta))*np.sin(theta), np.exp(c*np.cos(theta))*np.cos(theta)])
 
 
@@ -128,7 +128,7 @@ def dist_matrix(x_1,x_2):
     y = y + w_2
     return y
 
-# %%
+## %%
 
 
 
@@ -282,7 +282,7 @@ for pushforward of vector fields on the circle
 
 # %%
 # Fourier coefficients F_ak pf F w.r.t. difusion maps eigenvectors Phi_j
-F_ak_dm = (1/N)*np.matmul(F(u),Phis_normalized)
+F_ak_dm = (1/N)*np.matmul(F(u), Phis_normalized)
 
 
 # Compute c_ijp coefficients
@@ -369,7 +369,7 @@ to obtain v_hat'
 
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
 def monte_carlo_product_dm(Phis, u, N = 800):
-    v_an = v3F(u)
+    v_an = v2F(u)
     integral = (1/N)*np.sum(Phis*v_an, axis = 1)
     
     return integral
@@ -434,11 +434,11 @@ vector_approx_mc_dm = np.empty([n, 4], dtype = float)
 
 def W_x_mc_dm(x, y):
     varphi_xy = np.real(varphi(np.reshape(np.array([x, y]), (2, 1))))
-    return np.sum(p_am_mc_dm[0, :]*varphi_xy)
+    return np.sum(-p_am_mc_dm[1, :]*varphi_xy)
 
 def W_y_mc_dm(x, y):
     varphi_xy = np.real(varphi(np.reshape(np.array([x, y]), (2, 1))))
-    return np.sum(p_am_mc_dm[1, :]*varphi_xy)
+    return np.sum(p_am_mc_dm[0, :]*varphi_xy)
 
 for i in range(0, n):
     W_theta_x_mc_dm[i] = W_x_mc_dm(TRAIN_X[i], TRAIN_Y[i])
@@ -487,7 +487,6 @@ plt.show()
 # %%
 
 
-
 """
 Plot the pushfoward map F_* of the embedding F
 as a quiver plot in R62 to capture tbe bias in SEC approximation
@@ -508,19 +507,41 @@ X_TRAIN_NEW, Y_TRAIN_NEW = np.meshgrid(x_train_new, y_train_new)
 W_theta_x_new = np.zeros([m, m], dtype = float)
 W_theta_y_new = np.zeros([m, m], dtype = float)
 
+x_fixed_points = []
+y_fixed_points = []
+
 for i in range(0, m):
     for j in range(0, m):
         W_theta_x_new[i, j] = W_x_mc_dm(X_TRAIN_NEW[i, j], Y_TRAIN_NEW[i, j])
         W_theta_y_new[i, j] = W_y_mc_dm(X_TRAIN_NEW[i, j], Y_TRAIN_NEW[i, j])
-        # vector_approx_mc_dm[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x_mc_dm[i], W_theta_y_mc_dm[i]])
         
+        # Fi nding fixed points of W_theata for the given x and y coordinates
+
+for i in range(0, m):
+    for j in range(0, m):
+        if ((W_theta_x_new[i, j] - X_TRAIN_NEW[i, j] < 1e-8) and (W_theta_y_new[i, j] - Y_TRAIN_NEW[i, j] < 1e-8)):
+            x_fixed_points.append(X_TRAIN_NEW[i, j])
+            y_fixed_points.append(Y_TRAIN_NEW[i, j])
+
+# %%
+print(W_x_mc_dm(0.5, 1.5))
+print(W_y_mc_dm(0.5, 1.5))
+# %%
+# %%
 U_TRAIN_NEW = W_theta_x_new
 V_TRAIN_NEW = W_theta_y_new
 
+# U_TRAIN_NEW = W_theta_x_new / np.sort(W_theta_x_new**2 + W_theta_y_new**2)
+# V_TRAIN_NEW = W_theta_y_new / np.sort(W_theta_x_new**2 + W_theta_y_new**2)
 
+X_FIXED_POINTS = np.array(x_fixed_points)
+Y_FIXED_POINTS = np.array(y_fixed_points)
+
+# %%
 plt.figure()
 ax = plt.gca()
 plt.quiver(X_TRAIN_NEW, Y_TRAIN_NEW, U_TRAIN_NEW, V_TRAIN_NEW)
+plt.scatter(X_FIXED_POINTS, Y_FIXED_POINTS, s = 15, color = 'red')
 
 ax.set_xlim([-2,2])
 ax.set_ylim([-2,2])
@@ -572,9 +593,7 @@ plt.plot(sol_true.y.T[:, 0], sol_true.y.T[:, 1])
 plt.xlabel('x')
 plt.ylabel('y')
 plt.title('Solutions to ODE under the true system')
-plt.show()
-
-
+plt.sho
 sidefig, (ax1, ax2, ax3) = plt.subplots(3, figsize=(24, 16))
 sidefig.suptitle('Solutions to ODE under the true system')
 

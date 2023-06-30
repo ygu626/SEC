@@ -434,11 +434,11 @@ vector_approx_mc_dm = np.empty([n, 4], dtype = float)
 
 def W_x_mc_dm(x, y):
     varphi_xy = np.real(varphi(np.reshape(np.array([x, y]), (2, 1))))
-    return np.sum(-p_am_mc_dm[1, :]*varphi_xy)
+    return np.sum(p_am_mc_dm[0, :]*varphi_xy)
 
 def W_y_mc_dm(x, y):
     varphi_xy = np.real(varphi(np.reshape(np.array([x, y]), (2, 1))))
-    return np.sum(p_am_mc_dm[0, :]*varphi_xy)
+    return np.sum(p_am_mc_dm[1, :]*varphi_xy)
 
 for i in range(0, n):
     W_theta_x_mc_dm[i] = W_x_mc_dm(TRAIN_X[i], TRAIN_Y[i])
@@ -487,6 +487,7 @@ plt.show()
 # %%
 
 
+
 """
 Plot the pushfoward map F_* of the embedding F
 as a quiver plot in R62 to capture tbe bias in SEC approximation
@@ -496,10 +497,11 @@ usibg meshgrid as the training data set
 # %%
 m = 20           #Square root of number of points used in quiver plot of F_*
 
-x_train_new = np.linspace(-1.5,1.5, m)
+x_train_new = np.linspace(-1.5, 1.5, m)
 y_train_new = np.linspace(-1.5, 1.5, m)
 
 X_TRAIN_NEW, Y_TRAIN_NEW = np.meshgrid(x_train_new, y_train_new)
+THETA_TRAIN_NEW = np.angle(X_TRAIN_NEW + (1j)*Y_TRAIN_NEW)
 
 # print(X_TRAIN_NEW.shape)
 # print(Y_TRAIN_NEW.shape)
@@ -515,19 +517,12 @@ for i in range(0, m):
         W_theta_x_new[i, j] = W_x_mc_dm(X_TRAIN_NEW[i, j], Y_TRAIN_NEW[i, j])
         W_theta_y_new[i, j] = W_y_mc_dm(X_TRAIN_NEW[i, j], Y_TRAIN_NEW[i, j])
         
-        # Fi nding fixed points of W_theata for the given x and y coordinates
-
-for i in range(0, m):
-    for j in range(0, m):
-        if ((W_theta_x_new[i, j] - X_TRAIN_NEW[i, j] < 1e-8) and (W_theta_y_new[i, j] - Y_TRAIN_NEW[i, j] < 1e-8)):
+        # Finding fixed points of W_theata for the given x and y coordinates
+        if ((abs(v2F(THETA_TRAIN_NEW[i, j])[0] - X_TRAIN_NEW[i, j]) < 0.2) and (abs(v2F(THETA_TRAIN_NEW[i, j])[1] - Y_TRAIN_NEW[i, j]) < 0.2)):
             x_fixed_points.append(X_TRAIN_NEW[i, j])
             y_fixed_points.append(Y_TRAIN_NEW[i, j])
 
-# %%
-print(W_x_mc_dm(0.5, 1.5))
-print(W_y_mc_dm(0.5, 1.5))
-# %%
-# %%
+
 U_TRAIN_NEW = W_theta_x_new
 V_TRAIN_NEW = W_theta_y_new
 
@@ -537,7 +532,7 @@ V_TRAIN_NEW = W_theta_y_new
 X_FIXED_POINTS = np.array(x_fixed_points)
 Y_FIXED_POINTS = np.array(y_fixed_points)
 
-# %%
+
 plt.figure()
 ax = plt.gca()
 plt.quiver(X_TRAIN_NEW, Y_TRAIN_NEW, U_TRAIN_NEW, V_TRAIN_NEW)
@@ -550,6 +545,10 @@ ax.set_title('Quiver Plot of the SEC Approximated function F: R2-->R2')
 plt.show()
 # %%
 
+# %%
+print(x_fixed_points)
+print(y_fixed_points)
+# %%
 
 
 """
@@ -629,7 +628,7 @@ yinit = [1, 0]
 
 # Solve ODE under the SEC approximated system
 sol_sec_mc = solve_ivp(lambda t, y: f_sec_mc(t, y),
-                    [tspan[0], tspan[-1]], yinit, t_eval=tspan, rtol=1e-5)
+                    [tspan[0], tspan[-1]], yinit, t_eval=tspan, rtol = 1e-5)
 
 
 # Plot solutions to the SEC approximated system

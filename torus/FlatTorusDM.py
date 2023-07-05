@@ -277,7 +277,7 @@ print(lambs_a)
 print(lambs_b)        
 # %%
 
-
+# %%
 # Normalize eigenfunctions Phi_a_j and Phi_b_j for the latitude and meridian circles
 Phis_a_normalized = np.empty([N, 2*I+1], dtype = float)
 Phis_b_normalized = np.empty([N, 2*I+1], dtype = float)
@@ -301,6 +301,8 @@ Lambs_b_normalized = np.power(Lambs_b, 4)
 
 varphi_a = make_varphi(p_a, training_data_a, Lambs_a, Phis_a_normalized)
 varphi_b = make_varphi(p_b, training_data_b, Lambs_b, Phis_b_normalized)
+
+varphi = lambda training_data_a, training_data_b: np.matmul(varphi_a(training_data_a), varphi_b(training_data_b))
 # %%
 
 
@@ -310,24 +312,26 @@ for eigenvalues and eigenfunctions of the 0-Laplacian
 on the latitude circle with radius a and meridian circle with radius b of the torus
 """
 
-# %%
 # Check approximations for Laplacian eigenbasis agree with true eigenbasis
 # by ploting against linear combinations of true eigenfunctions 
 
 # Get x values of the sine wave
-time_a = u_a
-time2_a = u_a
+time_a = u_a * u_b
+time2_a = u_a * u_b
 
 # Amplitude of the sine wave is sine of a variable like time
-amplitude_a = Phis_a_normalized[:, 1]
-amplitude2_a = np.real(varphi_a(training_data_a)[:, 1])
+amplitude_a = Phis_a_normalized[:, 1] * Phis_b_normalized[:, 1]
+amplitude2_a = np.real(varphi_a(training_data_a)[:, 1]) * np.real(varphi_b(training_data_b)[:, 1])
+
+# print(amplitude_a.shape)
+
 
 # Plot a sine wave using time and amplitude obtained for the sine wave
 plt.scatter(time_a, amplitude_a, color = 'blue')
 plt.scatter(time2_a, amplitude2_a, color = 'red')
 
 # Give a title for the sine wave plot
-plt.title('Sine wave')
+plt.title('Sine multipled by cosine waves')
 
 # Give x axis label for the sine wave plot
 plt.xlabel('Time')
@@ -338,8 +342,9 @@ plt.grid(True, which='both')
 plt.axhline(y=0, color='k')
 
 plt.show()
+# %%
 
-
+# %%
 # Get x values of the sine wave
 time_b = u_b
 time2_b = u_b
@@ -347,6 +352,8 @@ time2_b = u_b
 # Amplitude of the sine wave is sine of a variable like time
 amplitude_b = Phis_b_normalized[:, 1]
 amplitude2_b = np.real(varphi_b(training_data_b)[:, 1])
+print(amplitude2_b.shape)
+# %%
 
 # Plot a sine wave using time and amplitude obtained for the sine wave
 plt.scatter(time_b, amplitude_b, color = 'blue')

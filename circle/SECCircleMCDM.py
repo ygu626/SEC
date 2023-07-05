@@ -88,6 +88,13 @@ v1F = lambda theta: np.array([-np.sin(theta), np.cos(theta)])
 v2F = lambda theta: np.array([-np.sin(theta) - c*np.sin(theta)*np.cos(theta), np.cos(theta) + c*(np.cos(theta))**2])
 v3F = lambda theta: np.array([-np.exp(c*np.cos(theta))*np.sin(theta), np.exp(c*np.cos(theta))*np.cos(theta)])
 
+v1F1_root = lambda theta: -np.sin(theta) - theta
+v1F2_root = lambda theta: np.cos(theta) - theta
+v2F1_root = lambda theta: -np.sin(theta) - c*np.sin(theta)*np.cos(theta) - theta
+v2F2_root = lambda theta: np.cos(theta) + c*(np.cos(theta))**2 - theta
+v3F1_root = lambda theta: -np.exp(c*np.cos(theta))*np.sin(theta) - theta
+v3F1_root = lambda theta: np.exp(c*np.cos(theta))*np.cos(theta) - theta
+
 
 # Component functions as part of the vector v\field v
 # f1 = lambda theta: 1 + c*np.cos(theta)
@@ -501,27 +508,17 @@ x_train_new = np.linspace(-1.5, 1.5, m)
 y_train_new = np.linspace(-1.5, 1.5, m)
 
 X_TRAIN_NEW, Y_TRAIN_NEW = np.meshgrid(x_train_new, y_train_new)
-THETA_TRAIN_NEW = np.angle(X_TRAIN_NEW + (1j)*Y_TRAIN_NEW)
-
-# print(X_TRAIN_NEW.shape)
-# print(Y_TRAIN_NEW.shape)
+# THETA_TRAIN_NEW = np.angle(X_TRAIN_NEW + (1j)*Y_TRAIN_NEW)
 
 W_theta_x_new = np.zeros([m, m], dtype = float)
 W_theta_y_new = np.zeros([m, m], dtype = float)
 
-x_fixed_points = []
-y_fixed_points = []
 
 for i in range(0, m):
     for j in range(0, m):
         W_theta_x_new[i, j] = W_x_mc_dm(X_TRAIN_NEW[i, j], Y_TRAIN_NEW[i, j])
         W_theta_y_new[i, j] = W_y_mc_dm(X_TRAIN_NEW[i, j], Y_TRAIN_NEW[i, j])
         
-        # Finding fixed points of W_theata for the given x and y coordinates
-        if ((abs(v2F(THETA_TRAIN_NEW[i, j])[0] - X_TRAIN_NEW[i, j]) < 0.2) and (abs(v2F(THETA_TRAIN_NEW[i, j])[1] - Y_TRAIN_NEW[i, j]) < 0.2)):
-            x_fixed_points.append(X_TRAIN_NEW[i, j])
-            y_fixed_points.append(Y_TRAIN_NEW[i, j])
-
 
 U_TRAIN_NEW = W_theta_x_new
 V_TRAIN_NEW = W_theta_y_new
@@ -529,14 +526,111 @@ V_TRAIN_NEW = W_theta_y_new
 # U_TRAIN_NEW = W_theta_x_new / np.sort(W_theta_x_new**2 + W_theta_y_new**2)
 # V_TRAIN_NEW = W_theta_y_new / np.sort(W_theta_x_new**2 + W_theta_y_new**2)
 
-X_FIXED_POINTS = np.array(x_fixed_points)
-Y_FIXED_POINTS = np.array(y_fixed_points)
+
+# Finding fixed points of the compontent functions of vF
+def rootsearch(f, a, b, dx):
+    x1 = a
+    f1 = f(a)
+    x2 = a + dx
+    f2 = f(x2)
+    
+    while f1*f2 > 0.0:
+        if x1 >= b:
+            return None,None
+        
+        x1 = x2
+        f1 = f2
+        x2 = x1 + dx
+        f2 = f(x2)
+        
+    return x1,x2
 
 
+def bisect(f, x1, x2, switch=0, epsilon=1e-8):
+    root_lst = []
+    f1 = f(x1)
+    
+    if f1 == 0.0:
+        return x1
+    f2 = f(x2)
+    
+    if f2 == 0.0:
+        return x2
+    
+    if f1*f2 > 0.0:
+        print('Root is not bracketed')
+        return None
+    
+    l = int(np.ceil(np.log(abs(x2 - x1)/epsilon)/np.log(2.0)))
+    
+    for i in range(l):
+        x3 = 0.5*(x1 + x2)
+        f3 = f(x3)
+        
+        if (switch == 1) and (abs(f3) >abs(f1)) and (abs(f3) > abs(f2)):
+            return None
+        
+        if f3 == 0.0:
+            return x3
+        
+        if f2*f3 < 0.0:
+            x1 = x3
+            f1 = f3
+        
+        else:
+            x2 =x3
+            f2 = f3
+            
+    root_lst.append((x1 + x2)/2.0)
+    # return (x1 + x2)/2.0
+    return root_lst
+      
+
+
+def roots(f, a, b, eps = 1e-6):
+    # print ('The roots on the interval [%f, %f] are:' % (a,b))
+    
+    while 1:
+        x1,x2 = rootsearch(f, a, b, eps)
+        
+        if x1 != None:
+            a = x2
+            root = bisect(f, x1, x2, 1)
+            
+            if root != None:
+                pass
+                # root_lst = [round(root,-int(math.log(eps, 10)))]
+                # print(round(root,-int(math.log(eps, 10)))
+        else:
+            # print ('\nDone')
+            break
+    
+    return root
+
+
+v2F1_fixed_points = roots(v2F1_root, -2*np.pi, 2*np.pi)
+v2F2_fixed_points = roots(v2F2_root, -2*np.pi, 2*np.pi)
+
+
+# Quiver plot of vF 
+# (pushforward of the embedding function F applied to v)
+# and plots of fixed points of components of vF
 plt.figure()
 ax = plt.gca()
 plt.quiver(X_TRAIN_NEW, Y_TRAIN_NEW, U_TRAIN_NEW, V_TRAIN_NEW)
-plt.scatter(X_FIXED_POINTS, Y_FIXED_POINTS, s = 15, color = 'red')
+
+for i in range(0, len(v2F1_fixed_points)):
+    x_fixed = np.linspace(-2, 2, 100)
+    y_fixed = v2F1_fixed_points[i]*x_fixed
+    
+    plt.plot(x_fixed, y_fixed, color = 'red')
+
+for j in range(0, len(v2F2_fixed_points)):
+    x_fixed = np.linspace(-2, 2, 100)
+    y_fixed = v2F2_fixed_points[i]*x_fixed
+    
+    plt.plot(x_fixed, y_fixed, color = 'blue')
+
 
 ax.set_xlim([-2,2])
 ax.set_ylim([-2,2])

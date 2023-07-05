@@ -202,8 +202,8 @@ q_b = make_normalization_func(k, training_data_b)
 k_hat_a = make_k_hat(k, q_a)
 k_hat_b = make_k_hat(k, q_b)
 
-K_hat_a = k_hat(training_data_a, training_data_a)
-K_hat_b = k_hat(training_data_b, training_data_b)
+K_hat_a = k_hat_a(training_data_a, training_data_a)
+K_hat_b = k_hat_b(training_data_b, training_data_b)
 # print(K_hat[:3,:3])
 
 

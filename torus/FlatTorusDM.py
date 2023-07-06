@@ -118,8 +118,9 @@ print(V_b)
 
 
 
-# Embedding map F and its pushforward vF applied to vector field v
+# Embedding map F and its pushforward F_* applied to vector field v
 F = lambda theta, rho: np.array([a*np.cos(theta), a*np.sin(theta), b*np.cos(rho), b*np.sin(rho)])
+
 v1F = lambda theta, rho: np.array([-a*np.sin(theta), a*np.cos(theta), -b*np.sin(rho), b*np.cos(tho)])
 
 # Pushforward of the flat embedding F applied to
@@ -414,3 +415,9 @@ SEC approximation
 for pushforward of vector fields on the torus
 with flat embedding into R4
 """
+
+# %%
+# Fourier coefficients F_ak pf F w.r.t. difusion maps eigenvectors Phi_j
+F_ak = (1/N)*np.concatenate((np.matmul(F(u_a, u_b)[0:2, :], Phis_a_normalized), np.matmul(F(u_a, u_b)[2:4, :], Phis_b_normalized)), axis = 0)
+
+# %%

@@ -120,7 +120,14 @@ print(V_b)
 
 # Embedding map F and its pushforward vF applied to vector field v
 F = lambda theta, rho: np.array([a*np.cos(theta), a*np.sin(theta), b*np.cos(rho), b*np.sin(rho)])
-vF = lambda theta, rho: np.array([-a*np.sin(theta), a*np.cos(theta), -b*np.sin(rho), b*np.cos(tho)])
+v1F = lambda theta, rho: np.array([-a*np.sin(theta), a*np.cos(theta), -b*np.sin(rho), b*np.cos(tho)])
+
+# Pushforward of the flat embedding F applied to
+# the Stepanoff flow vector field v
+v2F = lambda theta, rho: np.array([-a*np.sin(theta) - a*np.sin(theta)*np.cos(theta - rho) - a*(1 - alpha)*np.sin(theta)*(1 - np.cos(rho)), 
+                                   a*np.cos(theta) + a*np.cos(theta)*np.cos(theta - rho) + a*(1 - alpha)*np.cos(theta)*(1 - np.cos(rho)),
+                                   -b*alpha**(np.sin(rho) - np.sin(rho)*np.cos(theta - rho)),
+                                   b*alpha*(np.cos(rho) - np.cos(rho)*np.cos(theta - rho))])
 # %%
 
 
@@ -400,3 +407,10 @@ plt.axhline(y=0, color='k')
 
 plt.show()
 # %%
+
+
+"""
+SEC approximation
+for pushforward of vector fields on the torus
+with flat embedding into R4
+"""

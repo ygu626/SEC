@@ -612,6 +612,7 @@ v2F1_fixed_points = roots(v2F1_root, -2*np.pi, 2*np.pi)
 v2F2_fixed_points = roots(v2F2_root, -2*np.pi, 2*np.pi)
 
 
+
 # Quiver plot of vF 
 # (pushforward of the embedding function F applied to v)
 # and plots of fixed points of components of vF
@@ -626,7 +627,7 @@ for i in range(0, len(v2F1_fixed_points)):
     plt.plot(x_fixed, y_fixed, color = 'red')
 
 for j in range(0, len(v2F2_fixed_points)):
-    x_fixed = np.linspace(-2, 2, 100)
+    x_fixed = np.linspace(-1e-6, 2, 100)
     y_fixed = v2F2_fixed_points[i]*x_fixed
     
     plt.plot(x_fixed, y_fixed, color = 'blue')
@@ -639,10 +640,6 @@ ax.set_title('Quiver Plot of the SEC Approximated function F: R2-->R2')
 plt.show()
 # %%
 
-# %%
-print(x_fixed_points)
-print(y_fixed_points)
-# %%
 
 
 """
@@ -666,8 +663,8 @@ True System
 def f_true(t, y):
     # dydt = [-np.sin(np.angle(y[0]+(1j)*y[1])), np.cos(np.angle(y[0]+(1j)*y[1]))]
     # dydt = [-np.sin(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0]))]
-    # dydt = [-np.sin(np.arctan2(y[1], y[0])) - c*np.sin(np.arctan2(y[1], y[0]))*np.cos(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0])) + c*(np.cos(np.arctan2(y[1], y[0]))**2)]
-    dydt = [-np.exp(c*np.cos(np.arctan2(y[1], y[0])))*np.sin(np.arctan2(y[1], y[0])), np.exp(c*np.cos(np.arctan2(y[1], y[0])))*np.cos(np.arctan2(y[1], y[0]))]
+    dydt = [-np.sin(np.arctan2(y[1], y[0])) - c*np.sin(np.arctan2(y[1], y[0]))*np.cos(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0])) + c*(np.cos(np.arctan2(y[1], y[0]))**2)]
+    # dydt = [-np.exp(c*np.cos(np.arctan2(y[1], y[0])))*np.sin(np.arctan2(y[1], y[0])), np.exp(c*np.cos(np.arctan2(y[1], y[0])))*np.cos(np.arctan2(y[1], y[0]))]
     return dydt
 
 # Define time spans and initial values for the true system
@@ -686,7 +683,8 @@ plt.plot(sol_true.y.T[:, 0], sol_true.y.T[:, 1])
 plt.xlabel('x')
 plt.ylabel('y')
 plt.title('Solutions to ODE under the true system')
-plt.sho
+plt.show()
+
 sidefig, (ax1, ax2, ax3) = plt.subplots(3, figsize=(24, 16))
 sidefig.suptitle('Solutions to ODE under the true system')
 
@@ -712,13 +710,13 @@ SEC Approximated System
 # Define derivative function for the SEC approximated system
 def f_sec_mc(t, y):
     # dydt = [W_x_mc_dm(y[0], y[1]), W_y_mc_dm(y[0], y[1])]
-    # dydt = [-np.sin(np.arctan2(y[1], y[0])) - c*np.sin(np.arctan2(y[1], y[0]))*np.cos(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0])) + c*(np.cos(np.arctan2(y[1], y[0]))**2)]
-    dydt = [-np.exp(c*np.cos(np.arctan2(y[1], y[0])))*np.sin(np.arctan2(y[1], y[0])), np.exp(c*np.cos(np.arctan2(y[1], y[0])))*np.cos(np.arctan2(y[1], y[0]))]
+    dydt = [-np.sin(np.arctan2(y[1], y[0])) - c*np.sin(np.arctan2(y[1], y[0]))*np.cos(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0])) + c*(np.cos(np.arctan2(y[1], y[0]))**2)]
+    # dydt = [-np.exp(c*np.cos(np.arctan2(y[1], y[0])))*np.sin(np.arctan2(y[1], y[0])), np.exp(c*np.cos(np.arctan2(y[1], y[0])))*np.cos(np.arctan2(y[1], y[0]))]
     return dydt
 
 # Define time spans and initial values for the SEC approximated system
 tspan = np.linspace(0, 10, num=1000)
-yinit = [1, 0]
+yinit = [1.2, 0.1]
 
 # Solve ODE under the SEC approximated system
 sol_sec_mc = solve_ivp(lambda t, y: f_sec_mc(t, y),

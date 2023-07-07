@@ -472,3 +472,68 @@ g_b = np.multiply(g_b_coeff, c_b)
 # print(g_a[:,3,3])
 # print(g_b[:,3,3])
 # %%
+
+
+# %%
+# Compute G_ijpq entries for the Gram operator and its dual
+# for the latitude and meridian circles
+# using Monte Carlo integration
+G_a = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
+G_b = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
+
+G_a = np.einsum('ipm, jqm -> ijpq', c_a, g_a, dtype = float)
+G_b = np.einsum('ipm, jqm -> ijpq', c_b, g_b, dtype = float)
+
+G_a = G_a[:(2*J+1), :(2*K+1), :(2*J+1), :(2*K+1)]
+G_b = G_b[:(2*J+1), :(2*K+1), :(2*J+1), :(2*K+1)]
+
+G_a = np.reshape(G_a, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+G_b = np.reshape(G_b, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+
+
+# Perform singular value decompositions (SVD) of the Gram operators G_a and G_b
+# and plot these singular values
+u2_a, s2_a, vh_a = np.linalg.svd(G_a, full_matrices = True, compute_uv = True, hermitian = False)
+u2_b, s2_b, vh_b = np.linalg.svd(G_a, full_matrices = True, compute_uv = True, hermitian = False)
+
+sing_lst_a = np.arange(0, len(s2_a), 1, dtype = int)
+sing_lst_b = np.arange(0, len(s2_b), 1, dtype = int)
+
+plt.figure(figsize=(24, 6))
+plt.scatter(sing_lst_a, s2_a, color = 'red')
+
+plt.xticks(np.arange(0, ((2*J+1)*(2*K+1))+0.1, 1))
+plt.xlabel('Indices')
+plt.yticks(np.arange(0, max(s2_a)+0.1, 1))
+plt.ylabel('Singular Values')
+plt.title('Singular Values of the Gram Operator G_a_ijpq (descending order)')
+
+plt.show()
+
+
+plt.figure(figsize=(24, 6))
+plt.scatter(sing_lst_b, s2_b, color = 'red')
+
+plt.xticks(np.arange(0, ((2*J+1)*(2*K+1))+0.1, 1))
+plt.xlabel('Indices')
+plt.yticks(np.arange(0, max(s2_b)+0.1, 1))
+plt.ylabel('Singular Values')
+plt.title('Singular Values of the Gram Operator G_b_ijpq (descending order)')
+
+plt.show()
+
+
+# Teuncate singular values of G_a and G_b based based on 4% of the largest singular valuecof G
+threshold_a = 1/(0.04*np.max(s2_a))      # Threshold value for truncated SVD of G_a
+threshold_b = 1/(0.04*np.max(s2_b))      # Threshold value for truncated SVD of G_b
+
+
+
+# Compute duall Gram operators G*_a and G*_b using pseudoinverses based on truncated singular values of G_a and G_b
+G_dual_a = np.linalg.pinv(G_a, rcond = threshold_a)
+G_dual_b = np.linalg.pinv(G_b, rcond = threshold_b)
+
+print(G_dual_a[:2, :2])
+print(G_dual_b[:2, :2])
+# G_dual_mc = np.linalg.pinv(G_mc_weighted)
+# %%

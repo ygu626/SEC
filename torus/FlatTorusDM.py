@@ -419,5 +419,56 @@ with flat embedding into R4
 # %%
 # Fourier coefficients F_ak pf F w.r.t. difusion maps eigenvectors Phi_j
 F_ak = (1/N)*np.concatenate((np.matmul(F(u_a, u_b)[0:2, :], Phis_a_normalized), np.matmul(F(u_a, u_b)[2:4, :], Phis_b_normalized)), axis = 0)
+# %%
 
+# %%
+# Compute c_ijp coefficients
+# for the latitude and meridian circles
+# using Monte Carlo integration
+pool = mp.Pool()
+
+def c_a_func(i, j, p):
+    return (1/N)*np.sum(Phis_a_normalized[:, i]*Phis_a_normalized[:, j]*Phis_a_normalized[:, p])
+def c_b_func(i, j, p):
+    return (1/N)*np.sum(Phis_b_normalized[:, i]*Phis_b_normalized[:, j]*Phis_b_normalized[:, p])
+
+
+c_a = pool.starmap(c_a_func, 
+              [(i, j, p) for i in range(0, 2 * I + 1)
+                for j in range(0, 2 * I + 1)
+                for p in range(0, 2 * I + 1)])
+
+c_b = pool.starmap(c_b_func, 
+              [(i, j, p) for i in range(0, 2 * I + 1)
+                for j in range(0, 2 * I + 1)
+                for p in range(0, 2 * I + 1)])
+  
+    
+c_a = np.reshape(np.array(c_a), (2 * I + 1, 2 * I + 1, 2 * I + 1))
+c_b = np.reshape(np.array(c_b), (2 * I + 1, 2 * I + 1, 2 * I + 1))
+print(c_a[:,3,3])
+print(c_b[:,3,3])
+# %%
+
+# %%
+# Compute g_ijp Riemannian metric coefficients
+# for the latitude and meridian circles
+# using Monte Carlo integration
+g_a = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+g_b = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+
+g_a_coeff = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+g_b_coeff = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+
+for i in range(0, 2*I+1):
+            for j in range(0, 2*I+1):
+                        for p in range(0, 2*I+1):
+                                    g_a_coeff[i,j,p] = (lambs_a[i] + lambs_a[j] - lambs_a[p])/2
+                                    g_b_coeff[i,j,p] = (lambs_b[i] + lambs_b[j] - lambs_b[p])/2
+                                    
+g_a = np.multiply(g_a_coeff, c_a)
+g_b = np.multiply(g_b_coeff, c_b)
+   
+# print(g_a[:,3,3])
+# print(g_b[:,3,3])
 # %%

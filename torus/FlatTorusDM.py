@@ -121,7 +121,7 @@ print(V_b)
 # Embedding map F and its pushforward F_* applied to vector field v
 F = lambda theta, rho: np.array([a*np.cos(theta), a*np.sin(theta), b*np.cos(rho), b*np.sin(rho)])
 
-v1F = lambda theta, rho: np.array([-a*np.sin(theta), a*np.cos(theta), -b*np.sin(rho), b*np.cos(tho)])
+v1F = lambda theta, rho: np.array([-a*np.sin(theta), a*np.cos(theta), -b*np.sin(rho), b*np.cos(rho)])
 
 # Pushforward of the flat embedding F applied to
 # the Stepanoff flow vector field v
@@ -421,6 +421,7 @@ with flat embedding into R4
 F_ak = (1/N)*np.concatenate((np.matmul(F(u_a, u_b)[0:2, :], Phis_a_normalized), np.matmul(F(u_a, u_b)[2:4, :], Phis_b_normalized)), axis = 0)
 # %%
 
+
 # %%
 # Compute c_ijp coefficients
 # for the latitude and meridian circles
@@ -536,4 +537,98 @@ G_dual_b = np.linalg.pinv(G_b, rcond = threshold_b)
 print(G_dual_a[:2, :2])
 print(G_dual_b[:2, :2])
 # G_dual_mc = np.linalg.pinv(G_mc_weighted)
+# %%
+
+
+
+"""
+Applying analysis operator T to the pushforwaed F_*v = vF
+instead of direcrly to the vector field v
+using Monte Carlo integration
+to obtain v_hat'_a and v_hat'_b
+for the latitude and meridian circles
+"""
+
+
+# (L2) Deterministic Monte Carlo integral of products 
+# between eigenfunction phi_a_mn and "arrows" v_a_an, and phi_b_mn and "arrows" v_b_an
+def monte_carlo_product_a(Phis_a, u_a, N = 800):
+    v_a_an = v1F(u_a, u_b)[:2, :]
+    integral_a = (1/N)*np.sum(Phis_a*v_a_an, axis = 1)
+    
+    return integral_a
+
+def monte_carlo_product_b(Phis_b, u_b, N = 800):
+    v_b_an = v1F(u_a, u_b)[2:4, :]
+    integral_b = (1/N)*np.sum(Phis_b*v_b_an, axis = 1)
+    
+    return integral_b
+
+
+
+# Compute b_am_a and b_am_b entries using (L2) deterministic Monte Carlo integrals
+# for the latitude and meridian cicles
+pool = mp.Pool()
+
+def b_func_a(m):
+    return monte_carlo_product_a(Phis_a_normalized[:, m], u_a)
+
+def b_func_b(m):
+    return monte_carlo_product_b(Phis_b_normalized[:, m], u_b)
+
+
+b_am_a = pool.map(b_func_a, 
+              [m for m in range(0, 2 * I + 1)])
+b_am_a = np.array(b_am_a).T
+
+b_am_b = pool.map(b_func_b, 
+              [m for m in range(0, 2 * I + 1)])
+b_am_b = np.array(b_am_b).T
+# %%
+
+
+# Apply analysis operator T to obtain v_hat_prime_a and v_hat_prime_b
+# for the latitude and meridian circles
+# using pushforward vF of vector field v 
+# and Monte Carlo integration with weights
+gamma_km_a = np.einsum('ak, am -> km', F_ak[:2, :], b_am_a, dtype = float)
+gamma_km_b = np.einsum('ak, am -> km', F_ak[2:4, :], b_am_b, dtype = float)
+
+g_a = g_a[:(2*K+1), :, :]
+g_b = g_b[:(2*K+1), :, :]
+
+eta_qlm_a = np.einsum('qkl, km -> qlm', g_a, gamma_km_a, dtype = float)
+eta_qlm_b = np.einsum('qkl, km -> qlm', g_b, gamma_km_b, dtype = float)
+
+
+c_a = c_a[:(2*J+1), :, :]
+c_b = c_b[:(2*J+1), :, :]
+
+v_hat_prime_a = np.einsum('qlm, plm -> pq', eta_qlm_a, c_a, dtype = float)
+v_hat_prime_b = np.einsum('qlm, plm -> pq', eta_qlm_b, c_b, dtype = float)
+
+
+# Weighted v_hat_prime_a and v_hat_prime_b
+for q in range(0, 2*K+1):
+    v_hat_prime_a[:, q] = np.exp(-tau*lambs_a[q])*v_hat_prime_a[:, q]
+    v_hat_prime_b[:, q] = np.exp(-tau*lambs_b[q])*v_hat_prime_b[:, q]
+
+# v_hat_prime_mc_dm = np.reshape(np.array(v_hat_prime_mc_dm), ((2*J+1), (2*K+1)))
+v_hat_prime_a = np.reshape(v_hat_prime_a, ((2*J+1)*(2*K+1), 1))
+v_hat_prime_b = np.reshape(v_hat_prime_b, ((2*J+1)*(2*K+1), 1))
+
+
+# print(v_hat_prime_a[:2,:2])
+# print(v_hat_prime_b[:2,:2])
+
+
+# # Apply dual Gram operators G+_a amd G+_b to obtain v_hat_a and v_hat_b
+# for the latitude and meridian circles
+# using pushforward vF and original vector field v
+# both with Monte Carlo integration with weights
+v_hat_a = np.matmul(G_dual_a, v_hat_prime_a)
+v_hat_a = np.reshape(v_hat_a, (2*J+1, 2*K+1))
+
+v_hat_b = np.matmul(G_dual_b, v_hat_prime_b)
+v_hat_b = np.reshape(v_hat_b, (2*J+1, 2*K+1))
 # %%

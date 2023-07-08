@@ -292,6 +292,7 @@ for pushforward of vector fields on the circle
 F_ak_dm = (1/N)*np.matmul(F(u), Phis_normalized)
 
 
+
 # Compute c_ijp coefficients
 # Using Monte Carlo integration
 pool = mp.Pool()
@@ -412,7 +413,7 @@ v_hat_prime_mc_dm = np.reshape(v_hat_prime_mc_dm, ((2*J+1)*(2*K+1), 1))
 # print(v_hat_prime_mc_dm[:3,:3])
 
 
-# Apply dual Gram operator G^+ to obtain v_hat 
+# Apply dual Gram operator G* to obtain v_hat 
 # Using pushforward vF and original vector field v
 # Both with Monte Carlo integration with weights
 v_hat_mc_dm = np.matmul(G_dual_mc_dm, v_hat_prime_mc_dm)

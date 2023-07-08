@@ -2,7 +2,7 @@
 Spectral Exterior Calculus (SEC)
 2-torus T2 Example (Roration)
 Approximations of vector fields on the 2-torus
-usng donut e bedding into R^3
+usng donut embedding into R^3
 Given pushforward of tangent vectors on the circle
 and determinstically sampled Monte Carlo points on the circle
 """
@@ -24,13 +24,13 @@ from scipy.integrate import solve_ivp
 I = 10          # Inner index for eigenfunctions
 J = 5           # Outer index for eigenfunctions
 K = 3           # Index for gradients of eigenfunctions
-n = 8          # Number of approximated tangent vectors
+n = 100          # Number of approximated tangent vectors
 N = 800         # Number of Monte Carlo training data points 
 
 epsilon = 0.15  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
-a = 2           # Radius of the latitude circle of the torus
+a = 1           # Radius of the latitude circle of the torus
 b = 1           # Radius of the meridian circle of the torus
 
 
@@ -94,11 +94,12 @@ X_func = lambda theta, rho: (a + b*np.cos(theta))*np.cos(rho)
 Y_func = lambda theta, rho: (a + b*np.cos(theta))*np.sin(rho)
 Z_func = lambda theta: b*np.sin(theta)
 
-THETA, RHO = np.meshgrid(THETA_LST, RHO_LST)
+# THETA, RHO = np.meshgrid(THETA_LST, RHO_LST)
 
-x = X_func(THETA, RHO)
-y = Y_func(THETA, RHO)
-z = Z_func(THETA)
+# x = X_func(THETA, RHO)
+# y = Y_func(THETA, RHO)
+# z = Z_func(THETA)
+
 
 # def tangent_plane(f, x0, y0, x, u):
 #    gradient = nd.Gradient(f)([x0, y0])
@@ -106,49 +107,50 @@ z = Z_func(THETA)
 #    return z0 + gradient[0]*(x-x0) + gradient[1]*(y-y0)
     
 
-z_xy = (-((np.sqrt(x**2 + y**2) - a)**2 -b**2))
+# z_xy = (-((np.sqrt(x**2 + y**2) - a)**2 -b**2))
 
 
-fig = plt.figure()
+# fig = plt.figure()
 
-ax1 = fig.add_subplot(121, projection='3d')
-ax1.set_zlim(-3,3)
-ax1.plot_surface(x, y, z, rstride=5, cstride=5, color='k', edgecolors='w')
+# ax1 = fig.add_subplot(121, projection='3d')
+# ax1.set_zlim(-3,3)
+# ax1.plot_surface(x, y, z, rstride=5, cstride=5, color='k', edgecolors='w')
 # ax1.plot_surface(x, y, tangent_plane(z_xy, 1, 0, x, y), color='green')
-ax1.view_init(36, 26)
+# ax1.view_init(36, 26)
 
-ax2 = fig.add_subplot(122, projection='3d')
-ax2.set_zlim(-3,3)
-ax2.plot_surface(x, y, z, rstride=5, cstride=5, color='k', edgecolors='w')
-ax2.view_init(0, 0)
-ax2.set_xticks([])
+# ax2 = fig.add_subplot(122, projection='3d')
+# ax2.set_zlim(-3,3)
+# ax2.plot_surface(x, y, z, rstride=5, cstride=5, color='k', edgecolors='w')
+# ax2.view_init(0, 0)
+# ax2.set_xticks([])
 
-plt.show()
-# %%
+# plt.show()
+
 
 
 X_func_dtheta = lambda theta, rho: -b*np.sin(theta)*np.cos(rho)
 X_func_drho = lambda theta, rho: -(a + b*np.cos(theta))*np.sin(rho)
 Y_func_dtheta = lambda theta, rho: -b*np.sin(theta)*np.sin(rho)
-Y_func_drho = lambda theta rho: (a + b*np.cos(theta))*np.cos(rho)
+Y_func_drho = lambda theta, rho: (a + b*np.cos(theta))*np.cos(rho)
 Z_func_dtheta = lambda theta: b*np.cos(theta)
 Z_func_drho = lambda theta: 0
 
 
 TRAIN_X = np.array(X_func(THETA_LST, RHO_LST))
 TRAIN_Y = np.array(Y_func(THETA_LST, RHO_LST))
-TRAIN_Z = np.array([Z_func(THETA_LST)])
+TRAIN_Z = np.reshape(np.array([Z_func(THETA_LST)]), (n, ))
 
-TRAIN_X_DERIVATIVE = X_func_dtheta((THETA_LST, RHO_LST)) + X_func_drho((THETA_LST, RHO_LST))
-TRAIN_Y_DERIVATIVE = Y_func_dtheta((THETA_LST, RHO_LST)) + Y_func_drho((THETA_LST, RHO_LST))
-TRAIN_Z_DERIVATIVE = Z_func_dtheta((THETA_LST)) + Z_func_drho((THETA_LST)
+TRAIN_X_DERIVATIVE = np.array([x_dtheta + x_drho for x_dtheta, x_drho in zip(list(map(X_func_dtheta, THETA_LST, RHO_LST)), list(map(X_func_drho, THETA_LST, RHO_LST)))])
+TRAIN_Y_DERIVATIVE = np.array([y_dtheta + y_drho for y_dtheta, y_drho in zip(list(map(Y_func_dtheta, THETA_LST, RHO_LST)), list(map(Y_func_drho, THETA_LST, RHO_LST)))])
+TRAIN_Z_DERIVATIVE = np.array(Z_func_dtheta(THETA_LST) + Z_func_drho(THETA_LST))
 
 
 TRAIN_V = np.empty([n, 6], dtype = float)
 for i in range(0, n):
     TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], TRAIN_X_DERIVATIVE[i], TRAIN_Y_DERIVATIVE[i], TRAIN_Z_DERIVATIVE[i]])
 
-X_1, Y_1, Z_1 U, V_1, W_1 = zip(*TRAIN_V)
+
+X_1, Y_1, Z_1, U_1, V_1, W_1 = zip(*TRAIN_V)
 
 print(U_1)
 print(V_1)
@@ -156,10 +158,11 @@ print(W_1)
 
 
 
-# Embedding map F and its pushforward applied vF to vector field v
-F = lambda theta: np.array([np.cos(theta), np.sin(theta)])
-vF = lambda theta: np.array([-np.sin(theta), np.cos(theta)])
+# Embedding map F and its pushforward applied F_* applied to vector field v
+F = lambda theta, rho: np.array([(a + b*np.cos(theta))*np.cos(rho), (a + b*np.cos(theta))*np.sin(rho), a + b*np.sin(theta)])
 
+v1F = lambda theta, rho: np.array([-b*np.sin(theta)*np.cos(rho) - (a + b*np.cos(theta))*np.sin(rho), -b*np.sin(theta)*np.sin(rho) + (a + b*np.cos(theta))*np.cos(rho), b*np.cos(theta)])
+# %%
 
 
 

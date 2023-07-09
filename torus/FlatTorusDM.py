@@ -622,7 +622,7 @@ v_hat_prime_b = np.reshape(v_hat_prime_b, ((2*J+1)*(2*K+1), 1))
 # print(v_hat_prime_b[:2,:2])
 
 
-# # Apply dual Gram operators G+_a amd G+_b to obtain v_hat_a and v_hat_b
+# Apply dual Gram operators G+_a amd G+_b to obtain v_hat_a and v_hat_b
 # for the latitude and meridian circles
 # using pushforward vF and original vector field v
 # both with Monte Carlo integration with weights
@@ -631,4 +631,148 @@ v_hat_a = np.reshape(v_hat_a, (2*J+1, 2*K+1))
 
 v_hat_b = np.matmul(G_dual_b, v_hat_prime_b)
 v_hat_b = np.reshape(v_hat_b, (2*J+1, 2*K+1))
+# %%
+
+
+# Apply pushforward map F_* of the embedding F to v_hat_a and v_hat_b to obtain approximated vector fields
+# using Monte Carlo integration with weights
+
+# Weighted Riemannian metric g_a and g_b
+# for the latitude and meridian circles
+g_a_weighted = np.zeros([2*K+1, 2*I+1, 2*I+1], dtype = float)
+g_b_weighted = np.zeros([2*K+1, 2*I+1, 2*I+1], dtype = float)
+
+
+for j in range(0, 2*K+1):
+    g_a_weighted[j, :, :] = np.exp(-tau*lambs_a[j])*g_a[j, :, :]
+    g_b_weighted[j, :, :] = np.exp(-tau*lambs_b[j])*g_b[j, :, :]
+
+
+h_ajl_a = np.einsum('ak, jkl -> ajl', F_ak[:2, :], g_a_weighted, dtype = float)
+h_ajl_b = np.einsum('ak, jkl -> ajl', F_ak[2:4, :], g_b_weighted, dtype = float)
+
+# c_mc = c_mc[:(2*J+1), :, :]
+d_jlm_a = np.einsum('ij, ilm -> jlm', v_hat_a, c_a, dtype = float)
+d_jlm_b = np.einsum('ij, ilm -> jlm', v_hat_b, c_b, dtype = float)
+
+
+p_am_a = np.einsum('ajl, jlm -> am', h_ajl_a, d_jlm_a, dtype = float)
+p_am_b = np.einsum('ajl, jlm -> am', h_ajl_b, d_jlm_b, dtype = float)
+
+
+W_theta_x_a = np.zeros(n, dtype = float)
+W_theta_y_a = np.zeros(n, dtype = float)
+vector_approx_a = np.empty([n, 4], dtype = float)
+
+W_theta_x_b = np.zeros(n, dtype = float)
+W_theta_y_b = np.zeros(n, dtype = float)
+vector_approx_b = np.empty([n, 4], dtype = float)
+
+
+def W_x_a(x, y):
+    varphi_a_xy = np.real(varphi_a(np.reshape(np.array([x, y]), (2, 1))))
+    return np.sum(p_am_a[0, :]*varphi_a_xy)
+
+def W_y_a(x, y):
+    varphi_a_xy = np.real(varphi_a(np.reshape(np.array([x, y]), (2, 1))))
+    return np.sum(p_am_a[1, :]*varphi_a_xy)
+
+def W_x_b(x, y):
+    varphi_b_xy = np.real(varphi_b(np.reshape(np.array([x, y]), (2, 1))))
+    return np.sum(p_am_b[0, :]*varphi_b_xy)
+
+def W_y_b(x, y):
+    varphi_b_xy = np.real(varphi_b(np.reshape(np.array([x, y]), (2, 1))))
+    return np.sum(p_am_b[1, :]*varphi_b_xy)
+
+
+for i in range(0, n):
+    W_theta_x_a[i] = W_x_a(TRAIN_X[i], TRAIN_Y[i])
+    W_theta_y_a[i] = W_y_a(TRAIN_X[i], TRAIN_Y[i])
+    vector_approx_a[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x_a[i], W_theta_y_a[i]])
+    
+    W_theta_x_b[i] = W_x_b(TRAIN_Z[i], TRAIN_W[i])
+    W_theta_y_b[i] = W_y_b(TRAIN_Z[i], TRAIN_W[i])
+    vector_approx_b[i, :] = np.array([TRAIN_Z[i], TRAIN_W[i], W_theta_x_b[i], W_theta_y_b[i]])
+print(W_theta_x_a)
+print(W_theta_y_a)
+print(W_theta_x_b)
+print(W_theta_y_b)
+
+
+X_a_approx, Y_a_approx, U_a_approx, V_a_approx = zip(*vector_approx_a)
+X_b_approx, Y_b_approx, U_b_approx, V_b_approx = zip(*vector_approx_b)
+
+
+# Comparison between true pusbforward of vector field and pushforward of SEC approximated vector field
+# on thr latitude and meridian circles
+plt.figure()
+ax = plt.gca()
+ax.quiver(X_a, Y_a, U_a, V_a, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'black')
+ax.quiver(X_a_approx, Y_a_approx, U_a_approx, V_a_approx, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
+ax.set_xlim([-5,5])
+ax.set_ylim([-5,5])
+ax.set_title('Comparisons of True and SEC Approximated Vector Fields on the Latitude Circle with Radius a')
+
+t = np.linspace(0, 2*np.pi, 100000)
+ax.plot(a*np.cos(t), a*np.sin(t), linewidth = 2.5, color = 'blue')
+
+plt.draw()
+plt.show()
+
+
+sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+sidefig.suptitle('Comparisons of True and SEC Approximated Vector Fields on the Latitude Circle with Radius a')
+
+ax1.scatter(x = THETA_LST, y = -TRAIN_Y, color='black')
+ax1.scatter(x = THETA_LST, y = W_theta_x_a, color='red')
+ax1.set_xticks(np.arange(0, 2*np.pi+0.1, np.pi/4))
+ax1.set_xlabel("Angle Theta")
+ax1.set_ylabel("X-coordinates of Vector Fields")
+ax1.set_title('X-coordinates w.r.t. Angle Theta (true = black, SEC = red)')
+
+ax2.scatter(x = THETA_LST, y = TRAIN_X, color='black')
+ax2.scatter(x = THETA_LST, y = W_theta_y_a, color='red')
+ax2.set_xticks(np.arange(0, 2*np.pi+0.1, np.pi/4))
+ax2.set_xlabel("Angle Theta")
+ax2.set_ylabel("Y-coordinates of Vector Fields on the Latitude Circle with Radius a")
+ax2.set_title('Y-coordinates w.r.t. Angle Theta (true = black, SEC = red)')
+
+plt.show()
+
+
+
+plt.figure()
+ax = plt.gca()
+ax.quiver(X_b, Y_b, U_b, V_b, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'black')
+ax.quiver(X_b_approx, Y_b_approx, U_b_approx, V_b_approx, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
+ax.set_xlim([-5,5])
+ax.set_ylim([-5,5])
+ax.set_title('Comparisons of True and SEC Approximated Vector Fields on the Meridian Circle with Radius a')
+
+t = np.linspace(0, 2*np.pi, 100000)
+ax.plot(b*np.cos(t), b*np.sin(t), linewidth = 2.5, color = 'blue')
+
+plt.draw()
+plt.show()
+
+
+sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+sidefig.suptitle('Comparisons of True and SEC Approximated Vector Fields on the Meridian Circle with Radius a')
+
+ax1.scatter(x = RHO_LST, y = -TRAIN_W, color='black')
+ax1.scatter(x = RHO_LST, y = W_theta_x_b, color='red')
+ax1.set_xticks(np.arange(0, 2*np.pi+0.1, np.pi/4))
+ax1.set_xlabel("Angle Rho")
+ax1.set_ylabel("X-coordinates of Vector Fields")
+ax1.set_title('X-coordinates w.r.t. Angle Rho (true = black, SEC = red)')
+
+ax2.scatter(x = RHO_LST, y = TRAIN_Z, color='black')
+ax2.scatter(x = RHO_LST, y = W_theta_y_b, color='red')
+ax2.set_xticks(np.arange(0, 2*np.pi+0.1, np.pi/4))
+ax2.set_xlabel("Angle Rho")
+ax2.set_ylabel("Y-coordinates of Vector Fields on the Latitude Circle with Radius a")
+ax2.set_title('Y-coordinates w.r.t. Angle Rho (true = black, SEC = red)')
+
+plt.show()
 # %%

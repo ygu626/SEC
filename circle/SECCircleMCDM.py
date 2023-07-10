@@ -28,7 +28,7 @@ N = 800         # Number of Monte Carlo training data points
 epsilon = 0.25  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
-c = 1.5         # Component function parameter for vector field v
+c = 0.5         # Component function parameter for vector field v
 
 
 
@@ -71,8 +71,8 @@ TRAIN_Y = np.array(Y_func(THETA_LST))
 
 TRAIN_V = np.empty([n, 4], dtype = float)
 for i in range(0, n):
-    # TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
-    TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i] - 2*TRAIN_Y[i]*TRAIN_X[i], TRAIN_X[i] + 2*TRAIN_X[i]*TRAIN_X[i]])
+    TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i], TRAIN_X[i]])
+    # TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -TRAIN_Y[i] - 2*TRAIN_Y[i]*TRAIN_X[i], TRAIN_X[i] + 2*TRAIN_X[i]*TRAIN_X[i]])
     # TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], -np.exp(2*TRAIN_X[i])*TRAIN_Y[i], np.exp(2*TRAIN_X[i])*TRAIN_X[i]])
 
 X_1, Y_1, U_1, V_1 = zip(*TRAIN_V)
@@ -499,7 +499,7 @@ plt.show()
 """
 Plot the pushfoward map F_* of the embedding F
 as a quiver plot in R62 to capture tbe bias in SEC approximation
-usibg meshgrid as the training data set
+using meshgrid as the training data set
 """
 
 # %%
@@ -625,13 +625,13 @@ for i in range(0, len(v2F1_fixed_points)):
     x_fixed = np.linspace(-2, 2, 100)
     y_fixed = v2F1_fixed_points[i]*x_fixed
     
-    plt.plot(x_fixed, y_fixed, color = 'red')
+    # plt.plot(x_fixed, y_fixed, color = 'red')
 
 for j in range(0, len(v2F2_fixed_points)):
     x_fixed = np.linspace(-1e-6, 2, 100)
     y_fixed = v2F2_fixed_points[i]*x_fixed
     
-    plt.plot(x_fixed, y_fixed, color = 'blue')
+    # plt.plot(x_fixed, y_fixed, color = 'blue')
 
 
 ax.set_xlim([-2,2])
@@ -670,7 +670,7 @@ def f_true(t, y):
 
 # Define time spans and initial values for the true system
 tspan = np.linspace(0, 10, num=1000)
-yinit = [1.2, 0.1]
+yinit = [1, 0]
 
 # Solve ODE under the true system
 sol_true = solve_ivp(lambda t, y: f_true(t, y),
@@ -710,14 +710,14 @@ SEC Approximated System
 
 # Define derivative function for the SEC approximated system
 def f_sec_mc(t, y):
-    # dydt = [W_x_mc_dm(y[0], y[1]), W_y_mc_dm(y[0], y[1])]
-    dydt = [-np.sin(np.arctan2(y[1], y[0])) - c*np.sin(np.arctan2(y[1], y[0]))*np.cos(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0])) + c*(np.cos(np.arctan2(y[1], y[0]))**2)]
+    dydt = [W_x_mc_dm(y[0], y[1]), W_y_mc_dm(y[0], y[1])]
+    # dydt = [-np.sin(np.arctan2(y[1], y[0])) - c*np.sin(np.arctan2(y[1], y[0]))*np.cos(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0])) + c*(np.cos(np.arctan2(y[1], y[0]))**2)]
     # dydt = [-np.exp(c*np.cos(np.arctan2(y[1], y[0])))*np.sin(np.arctan2(y[1], y[0])), np.exp(c*np.cos(np.arctan2(y[1], y[0])))*np.cos(np.arctan2(y[1], y[0]))]
     return dydt
 
 # Define time spans and initial values for the SEC approximated system
 tspan = np.linspace(0, 10, num=1000)
-yinit = [1.2, 0.1]
+yinit = [1, 0]
 
 # Solve ODE under the SEC approximated system
 sol_sec_mc = solve_ivp(lambda t, y: f_sec_mc(t, y),

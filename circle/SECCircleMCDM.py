@@ -88,17 +88,17 @@ v2F = lambda theta: np.array([-np.sin(theta) - C*np.sin(theta)*np.cos(theta), np
 v3F = lambda theta: np.array([-np.exp(C*np.cos(theta))*np.sin(theta), np.exp(C*np.cos(theta))*np.cos(theta)])
 
 # Functions used in finding fixed points of v i.e. roots of vF - F
-v1F1_root = lambda theta: -np.sin(theta) - np.cos(theta)
-v1F2_root = lambda theta: np.cos(theta) - np.sin(theta)
-v2F1_root = lambda theta: -np.sin(theta) - C*np.sin(theta)*np.cos(theta) - np.cos(theta)
-v2F2_root = lambda theta: np.cos(theta) + C*(np.cos(theta))**2 - np.sin(theta)
-v3F1_root = lambda theta: -np.exp(C*np.cos(theta))*np.sin(theta) - np.cos(theta)
-v3F1_root = lambda theta: np.exp(C*np.cos(theta))*np.cos(theta) - np.sin(theta)
+# v1F1_root = lambda theta: -np.sin(theta) - np.cos(theta)
+# v1F2_root = lambda theta: np.cos(theta) - np.sin(theta)
+# v2F1_root = lambda theta: -np.sin(theta) - C*np.sin(theta)*np.cos(theta) - np.cos(theta)
+# v2F2_root = lambda theta: np.cos(theta) + C*(np.cos(theta))**2 - np.sin(theta)
+# v3F1_root = lambda theta: -np.exp(C*np.cos(theta))*np.sin(theta) - np.cos(theta)
+# v3F1_root = lambda theta: np.exp(C*np.cos(theta))*np.cos(theta) - np.sin(theta)
 
 
-# Component functions as part of the vector v\field v
-# f1 = lambda theta: 1 + c*np.cos(theta)
-# f2 = lambda theta: np.exp(c*np.cos(theta))                  # Jump function
+# Component functions as part of the vector field v
+h1 = lambda theta: 1 + C*np.cos(theta)
+h2 = lambda theta: np.exp(C*np.cos(theta))                  # Jump function
 
 
 
@@ -614,11 +614,12 @@ def roots(f, a, b, eps = 1e-6):
     return root
 
 
-v2F1_fixed_points = roots(v2F1_root, 0, 2*np.pi)
-v2F2_fixed_points = roots(v2F2_root, 0, 2*np.pi)
+v2F_fixed_points = roots(h1, 0, 2*np.pi)
 
-print(v2F1_fixed_points)
-print(v2F2_fixed_points)
+for i in range(0, len(v2F_fixed_points)):
+    v2F_fixed_points.append(np.pi + (np.pi - v2F_fixed_points[i]))
+
+print(v2F_fixed_points)
 
 
 # Quiver plot of vF 
@@ -633,17 +634,11 @@ ax.set_ylim([-2,2])
 ax.set_title('Quiver Plot of the SEC Approximated Function vF: R2-->R2')
 
 
-for i in range(0, len(v2F1_fixed_points)):
-    x_fixed = np.linspace(-2, 2, 100)
-    y_fixed = v2F1_fixed_points[i]*x_fixed
+for i in range(0, len(v2F_fixed_points)):
+    x_fixed = np.linspace(-2, 0, 100)
+    y_fixed = np.tan(v2F_fixed_points[i])*x_fixed
     
-    plt.plot(x_fixed, y_fixed, color = 'red')
-
-for j in range(0, len(v2F2_fixed_points)):
-    x_fixed = np.linspace(-1e-6, 2, 100)
-    y_fixed = v2F2_fixed_points[i]*x_fixed
-    
-    plt.plot(x_fixed, y_fixed, color = 'blue')
+    plt.plot(x_fixed, y_fixed, color = 'green')
 
 plt.show()
 # %%

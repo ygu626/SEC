@@ -42,7 +42,7 @@ and smbedding map F with pushforward F_*v = vF
 
 
 # Deterministically sampled Monte Carlo training data points
-# for two circles *latotude and meridian) of radius a and b
+# the latotude and meridian circles with radius a and b
 def monte_carlo_points(start_pt = 0, end_pt = 2*np.pi, N = 800):
     u_a = np.zeros(N)
     u_b = np.zeros(N)
@@ -56,6 +56,8 @@ def monte_carlo_points(start_pt = 0, end_pt = 2*np.pi, N = 800):
     
     random.shuffle(u_a)
     random.shuffle(u_b)
+    
+    u_a, u_b = np.meshgrid(u_a, u_b)
     
     training_data_a = np.empty([2, N], dtype = float)
     training_data_b = np.empty([2, N], dtype = float)

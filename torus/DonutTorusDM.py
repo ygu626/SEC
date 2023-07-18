@@ -57,8 +57,6 @@ def monte_carlo_points(start_pt = 0, end_pt = 2*np.pi, N = 800):
     random.shuffle(u_a)
     random.shuffle(u_b)
     
-    u_a, u_b = np.meshgrid(u_a, u_b)
-    
     training_data_a = np.empty([2, N], dtype = float)
     training_data_b = np.empty([2, N], dtype = float)
     
@@ -89,74 +87,59 @@ plt.show()
 # %%
 # n pushforward of vector field v ("arrows") on the torus
 # given points (x, y, z) specified by angle theta on the meridian circle and angle rho on the latitude circle
-THETA_LST = list(np.arange(0, 2*np.pi, np.pi/(50)))
-RHO_LST = list(np.arange(0, 2*np.pi, np.pi/(50)))
-
+THETA_LST, RHO_LST = np.meshgrid(u_a, u_b)
+    
 X_func = lambda theta, rho: (a + b*np.cos(theta))*np.cos(rho)
 Y_func = lambda theta, rho: (a + b*np.cos(theta))*np.sin(rho)
 Z_func = lambda theta: b*np.sin(theta)
 
-# THETA, RHO = np.meshgrid(THETA_LST, RHO_LST)
 
-# x = X_func(THETA, RHO)
-# y = Y_func(THETA, RHO)
-# z = Z_func(THETA)
+TRAIN_X = X_func(THETA_LST, RHO_LST)
+TRAIN_Y = Y_func(THETA_LST, RHO_LST)
+TRAIN_Z = Z_func(THETA_LST)
 
-
-# def tangent_plane(f, x0, y0, x, u):
-#    gradient = nd.Gradient(f)([x0, y0])
-#    z0 = f(x0, y0)
-#    return z0 + gradient[0]*(x-x0) + gradient[1]*(y-y0)
-    
-
-# z_xy = (-((np.sqrt(x**2 + y**2) - a)**2 -b**2))
+x = (a + b*np.cos(THETA_LST))*np.cos(RHO_LST)
+y = (a + b*np.cos(THETA_LST))*np.sin(RHO_LST)
+z = b*np.sin(THETA_LST)
+# %%
 
 
-# fig = plt.figure()
+# X_func_dtheta = lambda theta, rho: -b*np.sin(theta)*np.cos(rho)
+# X_func_drho = lambda theta, rho: -(a + b*np.cos(theta))*np.sin(rho)
+# Y_func_dtheta = lambda theta, rho: -b*np.sin(theta)*np.sin(rho)
+# Y_func_drho = lambda theta, rho: (a + b*np.cos(theta))*np.cos(rho)
+# Z_func_dtheta = lambda theta: b*np.cos(theta)
+# Z_func_drho = lambda theta: 0
 
-# ax1 = fig.add_subplot(121, projection='3d')
-# ax1.set_zlim(-3,3)
-# ax1.plot_surface(x, y, z, rstride=5, cstride=5, color='k', edgecolors='w')
-# ax1.plot_surface(x, y, tangent_plane(z_xy, 1, 0, x, y), color='green')
-# ax1.view_init(36, 26)
-
-# ax2 = fig.add_subplot(122, projection='3d')
-# ax2.set_zlim(-3,3)
-# ax2.plot_surface(x, y, z, rstride=5, cstride=5, color='k', edgecolors='w')
-# ax2.view_init(0, 0)
-# ax2.set_xticks([])
-
-# plt.show()
+# TRAIN_X_DERIVATIVE = np.array([x_dtheta + x_drho for x_dtheta, x_drho in zip(list(map(X_func_dtheta, THETA_LST, RHO_LST)), list(map(X_func_drho, THETA_LST, RHO_LST)))])
+# TRAIN_Y_DERIVATIVE = np.array([y_dtheta + y_drho for y_dtheta, y_drho in zip(list(map(Y_func_dtheta, THETA_LST, RHO_LST)), list(map(Y_func_drho, THETA_LST, RHO_LST)))])
+# TRAIN_Z_DERIVATIVE = np.array(Z_func_dtheta(THETA_LST) + Z_func_drho(THETA_LST))
 
 
-
-X_func_dtheta = lambda theta, rho: -b*np.sin(theta)*np.cos(rho)
-X_func_drho = lambda theta, rho: -(a + b*np.cos(theta))*np.sin(rho)
-Y_func_dtheta = lambda theta, rho: -b*np.sin(theta)*np.sin(rho)
-Y_func_drho = lambda theta, rho: (a + b*np.cos(theta))*np.cos(rho)
-Z_func_dtheta = lambda theta: b*np.cos(theta)
-Z_func_drho = lambda theta: 0
+# TRAIN_V = np.empty([n, 6], dtype = float)
+# for i in range(0, n):
+#     TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], TRAIN_X_DERIVATIVE[i], TRAIN_Y_DERIVATIVE[i], TRAIN_Z_DERIVATIVE[i]])
 
 
-TRAIN_X = np.array(X_func(THETA_LST, RHO_LST))
-TRAIN_Y = np.array(Y_func(THETA_LST, RHO_LST))
-TRAIN_Z = np.reshape(np.array([Z_func(THETA_LST)]), (n, ))
-
-TRAIN_X_DERIVATIVE = np.array([x_dtheta + x_drho for x_dtheta, x_drho in zip(list(map(X_func_dtheta, THETA_LST, RHO_LST)), list(map(X_func_drho, THETA_LST, RHO_LST)))])
-TRAIN_Y_DERIVATIVE = np.array([y_dtheta + y_drho for y_dtheta, y_drho in zip(list(map(Y_func_dtheta, THETA_LST, RHO_LST)), list(map(Y_func_drho, THETA_LST, RHO_LST)))])
-TRAIN_Z_DERIVATIVE = np.array(Z_func_dtheta(THETA_LST) + Z_func_drho(THETA_LST))
+# X_1, Y_1, Z_1, U_1, V_1, W_1 = zip(*TRAIN_V)
 
 
-TRAIN_V = np.empty([n, 6], dtype = float)
-for i in range(0, n):
-    TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], TRAIN_X_DERIVATIVE[i], TRAIN_Y_DERIVATIVE[i], TRAIN_Z_DERIVATIVE[i]])
+fig = plt.figure()
 
+ax1 = fig.add_subplot(121, projection='3d')
+ax1.set_zlim(-3,3)
+ax1.plot_surface(x, y, z, rstride=5, cstride=5, color='k', edgecolors='w')
+ax1.view_init(36, 26)
 
-X_1, Y_1, Z_1, U_1, V_1, W_1 = zip(*TRAIN_V)
+ax2 = fig.add_subplot(122, projection='3d')
+ax2.set_zlim(-3,3)
+ax2.plot_surface(x, y, z, rstride=5, cstride=5, color='k', edgecolors='w')
+ax2.view_init(0, 0)
+ax2.set_xticks([])
 
-print(U_1)
-print(V_1)
-print(W_1)
+plt.show()
+# %%
+
 
 
 

@@ -56,17 +56,18 @@ def monte_carlo_points(start_pt = 0, end_pt = 2*np.pi, N = 800):
     
     random.shuffle(u_a)
     random.shuffle(u_b)
-    
+    training_data = np.empty([4, N], dtype = float)
     training_data_a = np.empty([2, N], dtype = float)
     training_data_b = np.empty([2, N], dtype = float)
     
     for j in range(0, N):
+            training_data[:, j] = np.array([a*np.cos(u_a[j]), a*np.sin(u_a[j]), b*np.cos(u_b[j]), b*np.sin(u_b[j])])
             training_data_a[:, j] = np.array([a*np.cos(u_a[j]), a*np.sin(u_a[j])])
             training_data_b[:, j] = np.array([b*np.cos(u_b[j]), b*np.sin(u_b[j])])
     
-    return u_a, u_b, training_data_a, training_data_b
+    return u_a, u_b, training_data, training_data_a, training_data_b
 
-u_a, u_b, training_data_a, training_data_b = monte_carlo_points()
+u_a, u_b, training_data, training_data_a, training_data_b = monte_carlo_points()
 
 sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
@@ -141,9 +142,7 @@ plt.show()
 # %%
 
 
-
-
-# Embedding map F and its pushforward applied F_* applied to vector field v
+# Embedding map F and its pushforward F_* applied to vector field v
 F = lambda theta, rho: np.array([(a + b*np.cos(theta))*np.cos(rho), (a + b*np.cos(theta))*np.sin(rho), a + b*np.sin(theta)])
 
 v1F = lambda theta, rho: np.array([-b*np.sin(theta)*np.cos(rho) - (a + b*np.cos(theta))*np.sin(rho), -b*np.sin(theta)*np.sin(rho) + (a + b*np.cos(theta))*np.cos(rho), b*np.cos(theta)])
@@ -186,7 +185,7 @@ def dist_matrix(x_1,x_2):
 # %%
 
 
-
+# %%
 """
 Implementation of diffusion maps algorithm
 Approximation of eigenvalues and eigenfunctions of the 0-Laplacian
@@ -194,7 +193,6 @@ uo to a constant scaling factor
 """
 
 
-# %%
 # Diffusion maps algorithm
 
 # Normalization function q that corresponds to diagonal matrix Q
@@ -223,7 +221,7 @@ def make_k_hat(k, q):
 # Build normalized kernel matrix K_hat
 q = make_normalization_func(k, training_data)
 k_hat = make_k_hat(k, q)
-K_hat = k_hat(training_data, training_data)
+K_hat = k_hat(training_data_a, training_data_b)
 # print(K_hat[:3,:3])
 
 # Normalization function d that corresponds to diagonal matrix D

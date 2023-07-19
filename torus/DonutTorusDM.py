@@ -89,6 +89,7 @@ plt.show()
 # n pushforward of vector field v ("arrows") on the torus
 # given points (x, y, z) specified by angle theta on the meridian circle and angle rho on the latitude circle
 THETA_LST, RHO_LST = np.meshgrid(u_a, u_b)
+      
     
 X_func = lambda theta, rho: (a + b*np.cos(theta))*np.cos(rho)
 Y_func = lambda theta, rho: (a + b*np.cos(theta))*np.sin(rho)
@@ -195,18 +196,16 @@ uo to a constant scaling factor
 
 # Diffusion maps algorithm
 
-# Normalization function q that corresponds to diagonal matrix Q
+# Heat kernel function k
+k = lambda x_1, x_2: np.exp(-dist_matrix(x_1, x_2)/(epsilon**2))
+
+# Normalization function q corresponding to diagonal matrix Q
 def make_normalization_func(k, x_train):
     def normalized(x):
         y = np.sum(k(x, x_train), axis = 1)
         return y
     return normalized
 
-# Heat kernel function k
-k = lambda x_1, x_2: np.exp(-dist_matrix(x_1, x_2)/(epsilon**2))
-
-# Build kernel matrix K
-# K = k(training_data, training_data)
 
 # Normalized kernel function k_hat
 def make_k_hat(k, q):
@@ -219,14 +218,16 @@ def make_k_hat(k, q):
     return k_hat
 
 # Build normalized kernel matrix K_hat
-q = make_normalization_func(k, training_data)
+q = make_normalization_func(k, training_data_b)
 k_hat = make_k_hat(k, q)
 K_hat = k_hat(training_data_a, training_data_b)
-# print(K_hat[:3,:3])
+# print(K_hat[:2,:2])
+
 
 # Normalization function d that corresponds to diagonal matrix D
-d = make_normalization_func(k_hat, training_data)
-D = d(training_data)
+d = make_normalization_func(k_hat, training_data_b)
+D = d(training_data_a)
+
 
 # Markov kernel function p
 def make_p(k_hat, d):
@@ -239,8 +240,9 @@ def make_p(k_hat, d):
 
 # Build Markov kernel matrix P
 p = make_p(k_hat, d)
-P = p(training_data, training_data)
+P = p(training_data_a, training_data_b)
 # print(P[:3,:3])
+
 
 # Similarity transformation function s
 def make_s(p, d):
@@ -254,7 +256,7 @@ def make_s(p, d):
 
 # Build Similarity matrix S
 s = make_s(p, d)
-S = s(training_data, training_data)
+S = s(training_data_a, training_data_b)
 # print(S[:3,:3])
 
 
@@ -272,6 +274,7 @@ for i in range(0, 2*I+1):
 print(lambs_dm)         
 # %%
 
+# %%
 # Normalize eigenfunctions Phi_j
 Phis_normalized = np.empty([N, 2*I+1], dtype = float)
 for j in range(0, 2*I+1):
@@ -287,10 +290,11 @@ def make_varphi(k, x_train, lambs, phis):
 
 # Produce continuous extentions varphi_j for the eigenfunctions Phi_j
 Lambs_normalized = np.power(Lambs, 4)
-varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
+varphi = make_varphi(p, training_data_b, Lambs, Phis_normalized)
+# %%
 
 
-
+# %%
 """
 Check accuracy of diffusion maps approximation
 fir eigenvalues and eigenfunctions of 0-Laplacian
@@ -300,12 +304,12 @@ fir eigenvalues and eigenfunctions of 0-Laplacian
 # by ploting against linear combinations of true eigenfunctions 
 
 # Get x values of the sine wave
-time = u
-time2 = u
+time = u_a
+time2 = u_b
 
 # Amplitude of the sine wave is sine of a variable like time
 amplitude = Phis_normalized[:, 1]
-amplitude2 = np.real(varphi(training_data)[:, 1])
+amplitude2 = np.real(varphi(training_data_b)[:, 1])
 
 # Plot a sine wave using time and amplitude obtained for the sine wave
 plt.scatter(time, amplitude, color = 'blue')

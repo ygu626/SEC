@@ -269,7 +269,8 @@ Phis = np.real(eigenvectors[:, index])
 # Compute approximated 0-Laplacian eigengunctions
 lambs_dm = np.empty(2*I+1, dtype = float)
 for i in range(0, 2*I+1):
-            lambs_dm[i] = 4*(-np.log(np.real(Lambs[i]))/(epsilon**2)) 
+            lambs_dm[i] = 4*(-np.log(np.real(Lambs[i]))/(epsilon**2))
+            # lambs_dm[i] = (1 - np.real(Lambs[i]))/(epsilon**2)   
 
 print(lambs_dm)         
 # %%
@@ -327,4 +328,165 @@ plt.grid(True, which='both')
 plt.axhline(y=0, color='k')
 
 plt.show()
+# %%
+
+
+
+# %%
+"""
+SEC approximation
+for pushforward of vector fields on the 2-torus embedded in R3
+"""
+
+
+# Fourier coefficients F_ak pf F w.r.t. difusion maps approximated eigenvectors Phi_j
+F_aok = (1/N)*np.matmul(F(THETA_LST, RHO_LST), Phis_normalized)
+
+
+# Compute c_ijp coefficients
+# using Monte Carlo integration
+pool = mp.Pool()
+
+def c_func(i, j, p):
+    return (1/N)*np.sum(Phis_normalized[:, i]*Phis_normalized[:, j]*Phis_normalized[:, p])
+
+c = pool.starmap(c_func, 
+              [(i, j, p) for i in range(0, 2 * I + 1)
+                for j in range(0, 2 * I + 1)
+                for p in range(0, 2 * I + 1)])
+            
+c = np.reshape(np.array(c), (2 * I + 1, 2 * I + 1, 2 * I + 1))
+print(c[:,3,3])
+# %%
+
+# %%
+# Compute g_ijp Riemannian metric coefficients
+# using Monte Carlo integration
+g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+g_coeff = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+
+for i in range(0, 2*I+1):
+            for j in range(0, 2*I+1):
+                        for p in range(0, 2*I+1):
+                                    g_coeff[i,j,p] = (lambs_dm[i] + lambs_dm[j] - lambs_dm[p])/2
+
+# g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+# for i in range(0, 2*I+1):
+#             for j in range(0, 2*I+1):
+#                         for p in range(0, 2*I+1):
+#                                     g[i,j,p] = (lambs[i] + lambs[j] - lambs[p])*c[i,j,p]/2
+         
+print(g[:,3,3])
+# %%
+
+
+# %%
+# Compute G_ijpq entries for the Gram operator and its dual
+# using Monte Carlo integration
+G = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
+G = np.einsum('ipm, jqm -> ijpq', c, g, dtype = float)
+
+G = G[:(2*J+1), :(2*K+1), :(2*J+1), :(2*K+1)]
+G = np.reshape(G, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+
+print(G[:3:3])
+# %%
+
+
+# %%
+# Perform singular value decomposition (SVD) of the Gram operator G
+# and plot these singular values
+u2, s2, vh = np.linalg.svd(G, full_matrices = True, compute_uv = True, hermitian = False)
+# %%
+
+# %%
+sing_lst = np.arange(0, len(s2), 1, dtype = int)
+plt.figure(figsize=(24, 6))
+plt.scatter(sing_lst, s2, color = 'red')
+
+plt.xticks(np.arange(0, ((2*J+1)*(2*K+1))+0.1, 1))
+plt.xlabel('Indices')
+plt.yticks(np.arange(0, max(s2)+0.1, 1))
+plt.ylabel('Singular Values')
+plt.title('Singular Values of the Gram Operator G_ijpq (descending order)')
+
+plt.show()
+# %%
+
+
+# %%
+# Teuncate singular values of G based based on a small percentage of the largest singular valuecof G
+threshold = 1/(0.1*np.max(s2))      # Threshold value for truncated SVD
+
+
+# Compute duall Gram operator G* using pseudoinverse based on truncated singular values of G
+G_dual = np.linalg.pinv(G, rcond = threshold)
+# G_dual_mc = np.linalg.pinv(G_mc_weighted)
+# %%
+
+
+
+# %%
+"""
+Applying analysis operator T to the pushforwaed F_*v (instead of the vector field v)
+using Monte Carlo integration
+to obtain v_hat'
+"""
+
+
+# (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
+def monte_carlo_product(Phis, u_a, u_b, N = 800):
+    v_an = v1F(THETA_LST, RHO_LST)
+    integral = (1/N)*np.sum(Phis*v_an, axis = 1)
+    
+    return integral
+
+
+
+# Compute b_am entries using (L2) deterministic Monte Carlo integral
+pool = mp.Pool()
+
+def b_func(m):
+    return monte_carlo_product(Phis_normalized[:, m], THETA_LST, RHO_LST)
+
+
+b_aom = pool.map(b_func, 
+                [m for m in range(0, 2 * I + 1)])
+
+
+b_aom = np.reshape(np.array(b_aom), [3, N, 2 *I + 1])
+
+
+# Apply analysis operator T to obtain v_hat_prime
+# using pushforward vF of vector field v 
+# and Monte Carlo integration with weights
+gamma_kom = np.einsum('aok, aom -> kom', F_aok, b_aom, dtype = float)
+# %%
+
+# %%
+g = g[:(2*K+1), :, :]
+
+
+eta_qlom = np.einsum('qkl, kom -> qlom', g, gamma_kom, dtype = float)
+
+c = c[:(2*J+1), :, :]
+
+
+v_hat_prime = np.einsum('qlom, plm -> pqo', eta_qlom, c, dtype = float)
+
+for q in range(0, 2*K+1):
+    v_hat_prime[:, q, :] = np.exp(-tau*lambs[q])*v_hat_prime[:, q, :]
+
+# v_hat_prime = np.reshape(np.array(v_hat_prime), ((2*J+1), (2*K+1)))
+v_hat_prime = np.reshape(v_hat_prime, ((2*J+1)*(2*K+1), N))
+# print(v_hat_prime[:3,:3])
+# %%
+
+# %%
+# Apply dual Gram operator G* to obtain v_hat 
+# using pushforward vF and original vector field v
+# Both with Monte Carlo integration with weights
+v_hat = np.matmul(G_dual, v_hat_prime)
+v_hat = np.reshape(v_hat, (2*J+1, 2*K+1, N))
+
 # %%

@@ -56,18 +56,17 @@ def monte_carlo_points(start_pt = 0, end_pt = 2*np.pi, N = 800):
     
     random.shuffle(u_a)
     random.shuffle(u_b)
-    training_data = np.empty([4, N], dtype = float)
+
     training_data_a = np.empty([2, N], dtype = float)
     training_data_b = np.empty([2, N], dtype = float)
     
     for j in range(0, N):
-            training_data[:, j] = np.array([a*np.cos(u_a[j]), a*np.sin(u_a[j]), b*np.cos(u_b[j]), b*np.sin(u_b[j])])
             training_data_a[:, j] = np.array([a*np.cos(u_a[j]), a*np.sin(u_a[j])])
             training_data_b[:, j] = np.array([b*np.cos(u_b[j]), b*np.sin(u_b[j])])
     
-    return u_a, u_b, training_data, training_data_a, training_data_b
+    return u_a, u_b, training_data_a, training_data_b
 
-u_a, u_b, training_data, training_data_a, training_data_b = monte_carlo_points()
+u_a, u_b, training_data_a, training_data_b = monte_carlo_points()
 
 sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
@@ -489,4 +488,103 @@ v_hat_prime = np.reshape(v_hat_prime, ((2*J+1)*(2*K+1), N))
 v_hat = np.matmul(G_dual, v_hat_prime)
 v_hat = np.reshape(v_hat, (2*J+1, 2*K+1, N))
 
+# %%
+
+
+
+# %%
+# Apply pushforward map F_* of the embedding F to v_hat to obtain approximated vector fields
+# using Monte Carlo integration with weights
+
+# g = g[:(2*K+1), :, :]
+
+# Weighted g_ijp Riemannian metric coefficients
+g_weighted = np.zeros([2*K+1, 2*I+1, 2*I+1], dtype = float)
+for j in range(0, 2*K+1):
+    g_weighted[j, :, :] = np.exp(-tau*lambs[j])*g[j, :, :]
+
+
+h_ajol = np.einsum('aok, jkl -> ajol', F_aok, g_weighted, dtype = float)
+
+# c = c[:(2*J+1), :, :]
+d_jlom = np.einsum('ijo, ilm -> jlom', v_hat, c, dtype = float)
+
+p_am = np.einsum('ajol, jlom -> am', h_ajol, d_jlom, dtype = float)
+# %%
+
+# %%
+W_theta_x = np.zeros(n, dtype = float)
+W_theta_y = np.zeros(n, dtype = float)
+W_theta_z = np.zeros(n, dtype = float)
+
+vector_approx = np.empty([n, 6], dtype = float)
+
+A = varphi([THETA_LST, RHO_LST])
+print(A.shape)
+# %%
+
+
+
+def W_x(x):
+    varphi_x = np.real(varphi(x))
+    return np.sum(p_am[0, :]*varphi_x)
+
+def W_y(y):
+    varphi_y = np.real(varphi(y))
+    return np.sum(p_am[1, :]*varphi_y)
+
+def W_z(z):
+    varphi_z = np.real(varphi(z))
+    return np.sum(p_am[2, :]*varphi_z)
+
+
+for i in range(0, n):
+    W_theta_x[i] = W_x(TRAIN_X[i])
+    W_theta_y[i] = W_y(TRAIN_Y[i])
+    W_theta_z[i] = W_z(TRAIN_Z[i])
+
+    vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], W_theta_x[i], W_theta_y[i], W_theta_z[i]])
+
+print(W_theta_x)
+print(W_theta_y)
+print(W_theta_z)
+# %%
+
+X_2, Y_2, U_2, V_2 = zip(*vector_approx)
+
+
+# Comparison between true pusbforward of vector field and pushforward of SEC approximated vector field
+plt.figure()
+ax = plt.gca()
+ax.quiver(X_1, Y_1, U_1, V_1, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'red')
+ax.quiver(X_2, Y_2, U_2, V_2, angles = 'xy', scale_units = 'xy', scale = 0.3, color = 'blue')
+ax.set_xlim([-5,5])
+ax.set_ylim([-5,5])
+ax.set_title('Comparisons of True and SEC Approximated Vector Fields')
+
+t = np.linspace(0, 2*np.pi, 100000)
+ax.plot(np.cos(t), np.sin(t), linewidth = 2.5, color = 'black')
+
+plt.draw()
+plt.show()
+
+
+sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+sidefig.suptitle('Comparisons of True and SEC Approximated Vector Fields')
+
+ax1.scatter(x = THETA_LST, y = -TRAIN_Y, color='red')
+ax1.scatter(x = THETA_LST, y = W_theta_x, color='blue')
+ax1.set_xticks(np.arange(0, 2*np.pi+0.1, np.pi/4))
+ax1.set_xlabel("Angle Theta")
+ax1.set_ylabel("X-coordinates of Vector Fields")
+ax1.set_title('X-coordinates w.r.t. Angle Theta (true = black, SEC = red)')
+
+ax2.scatter(x = THETA_LST, y = TRAIN_X, color='red')
+ax2.scatter(x = THETA_LST, y = W_theta_y, color='blue')
+ax2.set_xticks(np.arange(0, 2*np.pi+0.1, np.pi/4))
+ax2.set_xlabel("Angle Theta")
+ax2.set_ylabel("Y-coordinates of Vector Fields")
+ax2.set_title('Y-coordinates w.r.t. Angle Theta (true = black, SEC = red)')
+
+plt.show()
 # %%

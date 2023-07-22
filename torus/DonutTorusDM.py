@@ -1,126 +1,3 @@
-
-
-"""
-Training data set
-with pushforward of vector fields v on the torus
-and smbedding map F with pushforward F_*v = vF
-"""
-
-
-# Deterministically sampled Monte Carlo training data points
-# the latotude and meridian circles with radius a and b
-def monte_carlo_points(start_pt = 0, end_pt = 2*np.pi, N = 100):
-    u_a = np.zeros(N)
-    u_b = np.zeros(N)
-    
-    subsets = np.arange(0, N+1, (N/50))
-    for i in range(0, int(N/2)):
-        start = int(subsets[i])
-        end = int(subsets[i+1])
-        u_a[start:end] = random.uniform(low = (i/(N/2))*end_pt, high = ((i+1)/(N/2))*end_pt, size = end - start)
-        u_b[start:end] = random.uniform(low = (i/(N/2))*end_pt, high = ((i+1)/(N/2))*end_pt, size = end - start)
-    
-    random.shuffle(u_a)
-    random.shuffle(u_b)
-
-    training_data_a = np.empty([2, N], dtype = float)
-    training_data_b = np.empty([2, N], dtype = float)
-    
-    for j in range(0, N):
-            training_data_a[:, j] = np.array([a*np.cos(u_a[j]), a*np.sin(u_a[j])])
-            training_data_b[:, j] = np.array([b*np.cos(u_b[j]), b*np.sin(u_b[j])])
-    
-    return u_a, u_b, training_data_a, training_data_b
-
-u_a, u_b, training_data_a, training_data_b = monte_carlo_points()
-
-# Create mesh of angles theta and rho for the latitude and meridian cricles
-# and transform into grid of points with these two angles
-THETA_LST, RHO_LST = np.meshgrid(u_a, u_b)
-
-training_angle = np.vstack([THETA_LST.ravel(), RHO_LST.ravel()])
-
-
-sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
-
-ax1.scatter(x = training_data_a[0,:], y = training_data_a[1,:], color = 'green')
-ax1.set_xlim([-5,5])
-ax1.set_ylim([-5,5])
-ax1.set_title('Monte Carlo Sampled Latitude Circle with Radius a')
-
-ax2.scatter(x = training_data_b[0,:], y = training_data_b[1,:], color = 'orange')
-ax2.set_xlim([-5,5])
-ax2.set_ylim([-5,5])
-ax2.set_title('Monte Carlo Sampled Meridian Circle with Radius b')
-
-plt.show()
-# %%
-
-
-# %%
-# Functions specifying the coordinates in R3
-# using the angles theat and rho for the latitude and meridian circles
-X_func = lambda theta, rho: (a + b*np.cos(theta))*np.cos(rho)
-Y_func = lambda theta, rho: (a + b*np.cos(theta))*np.sin(rho)
-Z_func = lambda theta: b*np.sin(theta)
-
-# N*N training data points corrdinates in the x, y and z coordinates
-TRAIN_X = X_func(training_angle[0, :], training_angle[1, :])
-TRAIN_Y = Y_func(training_angle[0, :], training_angle[1, :])
-TRAIN_Z = Z_func(training_angle[0, :])
-
-# N*N training data points containing all three coordinates of each point
-training_data = np.vstack([TRAIN_X, TRAIN_Y, TRAIN_Z])
-
-
-x = (a + b*np.cos(training_angle[0, :]))*np.cos(training_angle[1, :])
-y = (a + b*np.cos(training_angle[0, :]))*np.sin(training_angle[1, :])
-z = b*np.sin(training_angle[0, :])
-# %%
-
-
-# X_func_dtheta = lambda theta, rho: -b*np.sin(theta)*np.cos(rho)
-# X_func_drho = lambda theta, rho: -(a + b*np.cos(theta))*np.sin(rho)
-# Y_func_dtheta = lambda theta, rho: -b*np.sin(theta)*np.sin(rho)
-# Y_func_drho = lambda theta, rho: (a + b*np.cos(theta))*np.cos(rho)
-# Z_func_dtheta = lambda theta: b*np.cos(theta)
-# Z_func_drho = lambda theta: 0
-
-# TRAIN_X_DERIVATIVE = np.array([x_dtheta + x_drho for x_dtheta, x_drho in zip(list(map(X_func_dtheta, THETA_LST, RHO_LST)), list(map(X_func_drho, THETA_LST, RHO_LST)))])
-# TRAIN_Y_DERIVATIVE = np.array([y_dtheta + y_drho for y_dtheta, y_drho in zip(list(map(Y_func_dtheta, THETA_LST, RHO_LST)), list(map(Y_func_drho, THETA_LST, RHO_LST)))])
-# TRAIN_Z_DERIVATIVE = np.array(Z_func_dtheta(THETA_LST) + Z_func_drho(THETA_LST))
-
-
-# TRAIN_V = np.empty([n, 6], dtype = float)
-# for i in range(0, n):
-#     TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], TRAIN_X_DERIVATIVE[i], TRAIN_Y_DERIVATIVE[i], TRAIN_Z_DERIVATIVE[i]])
-
-
-# X_1, Y_1, Z_1, U_1, V_1, W_1 = zip(*TRAIN_V)
-
-
-# fig = plt.figure()
-
-# ax1 = fig.add_subplot(121, projection='3d')
-# ax1.set_zlim(-3,3)
-# ax1.plot_surface(x, y, z, rstride=5, cstride=5, color='k', edgecolors='w')
-# ax1.view_init(36, 26)
-
-# ax2 = fig.add_subplot(122, projection='3d')
-# ax2.set_zlim(-3,3)
-# ax2.plot_surface(TRAIN_X, TRAIN_Y, TRAIN_Z, rstride=5, cstride=5, color='k', edgecolors='w')
-# ax2.view_init(0, 0)
-# ax2.set_xticks([])
-
-# plt.show()
-
-
-# Embedding map F and its pushforward F_* applied to vector field v
-F = lambda theta, rho: np.array([(a + b*np.cos(theta))*np.cos(rho), (a + b*np.cos(theta))*np.sin(rho), a + b*np.sin(theta)])
-v1F = lambda theta, rho: np.array([-b*np.sin(theta)*np.cos(rho) - (a + b*np.cos(theta))*np.sin(rho), -b*np.sin(theta)*np.sin(rho) + (a + b*np.cos(theta))*np.cos(rho), b*np.cos(theta)])
-
-
-
 """
 Functions utilized in the following program
 """
@@ -274,6 +151,11 @@ Lambs_normalized = np.power(Lambs, 4)
 varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
 # %%
 
+# %%
+# Apply the coninuous extensiom varphi to the training data set
+cont_result = varphi(training_data)
+# %%
+
 
 
 # %%
@@ -289,7 +171,7 @@ x_coords = training_angle[0, :]
 y_coords = training_angle[1, :]
 
 z_true = Phis_normalized[:, 1]
-z_dm = np.real(varphi(training_data)[:, 1])
+z_dm = np.real(cont_result[:, 1])
 
 
 # Creating figure
@@ -304,4 +186,315 @@ ax2.scatter3D(x_coords, y_coords, z_dm, color = "red")
 plt.title("3D scatter plot of diffusion maps approximation")
  
 plt.show()
+# %%
+
+
+
+# %%
+"""
+SEC approximation
+for pushforward of vector fields on the 2-torus embedded in R3
+"""
+
+
+# Fourier coefficients F_ak pf F w.r.t. difusion maps approximated eigenvectors Phi_j
+F_ak = (1/(N**2))*np.matmul(F(training_angle[0, :], training_angle[1, :]), Phis_normalized)
+# %%
+
+# %%
+# Compute c_ijp coefficients
+# using Monte Carlo integration
+pool = mp.Pool()
+
+def c_func(i, j, p):
+    return (1/(N**2))*np.sum(Phis_normalized[:, i]*Phis_normalized[:, j]*Phis_normalized[:, p])
+
+c = pool.starmap(c_func, 
+              [(i, j, p) for i in range(0, 2 * I + 1)
+                for j in range(0, 2 * I + 1)
+                for p in range(0, 2 * I + 1)])
+            
+c = np.reshape(np.array(c), (2 * I + 1, 2 * I + 1, 2 * I + 1))
+print(c[:2,:2,:2])
+# %%
+
+
+# %%
+# Compute g_ijp Riemannian metric coefficients
+# using Monte Carlo integration
+g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+g_coeff = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+
+for i in range(0, 2*I+1):
+            for j in range(0, 2*I+1):
+                        for p in range(0, 2*I+1):
+                                    g_coeff[i,j,p] = (lambs_dm[i] + lambs_dm[j] - lambs_dm[p])/2
+
+g = np.multiply(g_coeff, c)
+
+
+# g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+# for i in range(0, 2*I+1):
+#             for j in range(0, 2*I+1):
+#                         for p in range(0, 2*I+1):
+#                                     g[i,j,p] = (lambs[i] + lambs[j] - lambs[p])*c[i,j,p]/2
+         
+print(g[:,:2,:2])
+# %%
+
+
+# %%
+# Compute G_ijpq entries for the Gram operator and its dual
+# using Monte Carlo integration
+G = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
+G = np.einsum('ipm, jqm -> ijpq', c, g, dtype = float)
+
+G = G[:(2*J+1), :(2*K+1), :(2*J+1), :(2*K+1)]
+G = np.reshape(G, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+
+print(G[:2,:2])
+# %%
+
+
+# %%
+# Perform singular value decomposition (SVD) of the Gram operator G
+# and plot these singular values
+u2, s2, vh = np.linalg.svd(G, full_matrices = True, compute_uv = True, hermitian = False)
+
+
+sing_lst = np.arange(0, len(s2), 1, dtype = int)
+plt.figure(figsize=(24, 6))
+plt.scatter(sing_lst, s2, color = 'red')
+
+plt.xticks(np.arange(0, ((2*J+1)*(2*K+1))+0.1, 1))
+plt.xlabel('Indices')
+plt.yticks(np.arange(0, max(s2)+0.1, 1))
+plt.ylabel('Singular Values')
+plt.title('Singular Values of the Gram Operator G_ijpq (descending order)')
+
+plt.show()
+# %%
+
+
+# %%
+# Teuncate singular values of G based based on a small percentage of the largest singular valuecof G
+threshold = 1/(0.01*np.max(s2))      # Threshold value for truncated SVD
+
+
+# Compute duall Gram operator G* using pseudoinverse based on truncated singular values of G
+G_dual = np.linalg.pinv(G, rcond = threshold)
+# G_dual_mc = np.linalg.pinv(G_mc_weighted)
+# %%
+
+
+
+# %%
+"""
+Applying analysis operator T to the pushforwaed F_*v (instead of the vector field v)
+using Monte Carlo integration
+to obtain v_hat'
+"""
+
+
+# (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
+def monte_carlo_product(Phis, training_angle, N = 100):
+    v_an = v1F(training_angle[0, :], training_angle[1, :])
+    integral = (1/(N**2))*np.sum(Phis*v_an, axis = 1)
+    
+    return integral
+# %%
+
+
+# %%
+# Compute b_am entries using (L2) deterministic Monte Carlo integral
+pool = mp.Pool()
+
+def b_func(m):
+    return monte_carlo_product(Phis_normalized[:, m], training_angle)
+
+
+b_am = pool.map(b_func, 
+                [m for m in range(0, 2 * I + 1)])
+
+b_am = np.array(b_am).T
+# %%
+
+
+# %%
+# Apply analysis operator T to obtain v_hat_prime
+# using pushforward vF of vector field v 
+# and Monte Carlo integration with weights
+gamma_km = np.einsum('ak, am -> km', F_ak, b_am, dtype = float)
+# %%
+
+
+# %%
+g = g[:(2*K+1), :, :]
+
+
+eta_qlm = np.einsum('qkl, km -> qlm', g, gamma_km, dtype = float)
+# %%
+
+
+# %%
+c = c[:(2*J+1), :, :]
+
+
+v_hat_prime = np.einsum('qlm, plm -> pq', eta_qlm, c, dtype = float)
+
+for q in range(0, 2*K+1):
+    v_hat_prime[:, q] = np.exp(-tau*lambs[q])*v_hat_prime[:, q]
+
+# v_hat_prime = np.reshape(np.array(v_hat_prime), ((2*J+1), (2*K+1)))
+v_hat_prime = np.reshape(v_hat_prime, ((2*J+1)*(2*K+1)))
+# print(v_hat_prime[:3,:3])
+# %%
+
+
+# %%
+# Apply dual Gram operator G* to obtain v_hat 
+# using pushforward vF and original vector field v
+# Both with Monte Carlo integration with weights
+v_hat = np.matmul(G_dual, v_hat_prime)
+v_hat = np.reshape(v_hat, (2*J+1, 2*K+1))
+# %%
+
+
+
+# %%
+# Apply pushforward map F_* of the embedding F to v_hat to obtain approximated vector fields
+# using Monte Carlo integration with weights
+
+# g = g[:(2*K+1), :, :]
+
+# Weighted g_ijp Riemannian metric coefficients
+g_weighted = np.zeros([2*K+1, 2*I+1, 2*I+1], dtype = float)
+for j in range(0, 2*K+1):
+    g_weighted[j, :, :] = np.exp(-tau*lambs[j])*g[j, :, :]
+
+
+h_ajl = np.einsum('ak, jkl -> ajl', F_ak, g_weighted, dtype = float)
+# %%
+
+# %%
+# c = c[:(2*J+1), :, :]
+d_jlm = np.einsum('ij, ilm -> jlm', v_hat, c, dtype = float)
+
+p_am = np.einsum('ajl, jlm -> am', h_ajl, d_jlm, dtype = float)
+# %%
+
+
+# %%
+W_theta_x = np.zeros(100, dtype = float)
+W_theta_y = np.zeros(100, dtype = float)
+W_theta_z = np.zeros(100, dtype = float)
+
+vector_approx = np.empty([100, 6], dtype = float)
+
+def W_theta(training_data):
+    varphi_xyz = np.real(varphi(training_data)).T
+    return np.matmul(p_am, varphi_xyz)
+
+example_training = training_data[:, :100]
+W_temp = W_theta(example_training)
+
+W_theta_x = W_temp[0, :]
+W_theta_y = W_temp[0, :]
+W_theta_z = W_temp[0, :]
+
+# %%
+for i in range(0, 100):
+    vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], W_theta_x[i], W_theta_y[i], W_theta_z[i]])
+
+# %%
+
+# %%
+def plot_vf(vector_approx):
+    plt.clf()
+    
+    # Plot the dataset
+    ax = plt.axes(projection ='3d')
+   
+    x = vector_approx[:, 0]
+    y = vector_approx[:, 1]
+    z = vector_approx[:, 2]
+   
+    a = vector_approx[:, 3]
+    b = vector_approx[:, 4]
+    c = vector_approx[:, 5]
+    
+    ax.quiver(x, y, z, a, b, c,length = 0.5, color = 'blue')
+    
+    plt.show()
+    
+plot_vf(vector_approx)
+# %%
+
+# %%
+print(vector_approx[:20,2:5])
+# %%
+
+
+def W_x(x, y, z):
+    varphi_xyz = np.real(varphi(np.reshape(np.array([x, y, z]), (3, 1))))
+    return np.sum(p_am[0, :]*varphi_xyz)
+
+def W_y(x, y, z):
+    varphi_xyz = np.real(varphi(np.reshape(np.array([x, y, z]), (3, 1))))
+    return np.sum(p_am[1, :]*varphi_xyz)
+
+def W_z(x, y, z):
+    varphi_xyz = np.real(varphi(np.reshape(np.array([x, y, z]), (3, 1))))
+    return np.sum(p_am[2, :]*varphi_xyz)
+
+# %%
+print(training_data.shape)
+a = training_data[:, :100]
+b = varphi(a)
+print(b.shape)
+# %%
+
+# %%
+c = p_am*b
+print(c.shape)
+# %%
+
+
+
+for i in range(0, 10):
+    W_theta_x[i] = W_x(TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i])
+    W_theta_y[i] = W_y(TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i])
+    W_theta_z[i] = W_z(TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i])
+
+    vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], W_theta_x[i], W_theta_y[i], W_theta_z[i]])
+
+print(W_theta_x)
+print(W_theta_y)
+print(W_theta_z)
+# %%
+
+
+# %%
+# Plotting SEC approximated vector fields in R3
+# using the donut embedding
+
+def plot_vf(vector_approx):
+    plt.clf()
+    
+    # Plot the dataset
+    ax = plt.axes(projection ='3d')
+   
+    x = vector_approx[:, 0]
+    y = vector_approx[:, 1]
+    z = vector_approx[:, 2]
+   
+    a = vector_approx[:, 3]
+    b = vector_approx[:, 4]
+    c = vector_approx[:, 5]
+    
+    ax.quiver(x, y, z, a, b, c,length =0.1)
+    
+    plt.show()
+    
+plot_vf(vector_approx)
 # %%

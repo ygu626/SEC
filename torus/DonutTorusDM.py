@@ -327,8 +327,8 @@ fir eigenvalues and eigenfunctions of 0-Laplacian
 x_coords = training_angle[0, :]
 y_coords = training_angle[1, :]
 
-z_true = Phis_normalized[:, 1]
-z_dm = np.real(cont_result[:, 1])
+z_true = Phis_normalized[:, 2]
+z_dm = np.real(cont_result[:, 2])
 
 
 # Creating figure
@@ -542,35 +542,36 @@ p_am = np.einsum('ajl, jlm -> am', h_ajl, d_jlm, dtype = float)
 # %%
 
 
+
 # %%
 W_theta_x = np.zeros(int(N**2), dtype = float)
 W_theta_y = np.zeros(int(N**2), dtype = float)
 W_theta_z = np.zeros(int(N**2), dtype = float)
 
+
 vector_approx = np.empty([int(N**2), 6], dtype = float)
 
 def W_theta(training_data):
-    varphi_xyz = np.real(varphi(training_data)).T
-    return np.matmul(p_am, varphi_xyz)
+    varphi_xyz = np.real(varphi(training_data))
+    
+    for i in range(0, int(N**2)):
+        W_theta_x[i] = np.sum(p_am[0, :]*varphi_xyz[i, :])
+        W_theta_y[i] = np.sum(p_am[1, :]*varphi_xyz[i, :])
+        W_theta_z[i] = np.sum(p_am[2, :]*varphi_xyz[i, :])
 
-W_temp = W_theta(training_data)
+    return W_theta_x, W_theta_y, W_theta_z
 
-W_theta_x = W_temp[0, :]
-W_theta_y = W_temp[1, :]
-W_theta_z = W_temp[2, :]
+W_x, W_y, W_z = W_theta(training_data)
 
-
+vector_approx = np.empty([int(N**2), 6], dtype = float)
 for i in range(0, int(N**2)):
-    vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], W_theta_x[i], W_theta_y[i], W_theta_z[i]])
+    vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], W_x[i], W_y[i], W_z[i]])
 
 # %%
 
 # %%
-print(vector_approx[:10,3:6])
+print(vector_approx[:3, :])
 # %%
-
-
-
 
 
 
@@ -593,22 +594,28 @@ x_t, y_t, z_t = plot_torus(100, 1, 1)
 
 ax = plt.axes(projection = '3d')
 
-ax.set_xlim(-3,3)
-ax.set_ylim(-3,3)
-ax.set_zlim(-3,3)
+ax.set_xlim(-4,4)
+ax.set_ylim(-4,4)
+ax.set_zlim(-4,4)
 
 ax.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
 
 
-x2 = vector_approx[:500, :][:, 0]
-y2 = vector_approx[:500, :][:, 1]
-z2 = vector_approx[:500, :][:, 2]
+random_num = 200    # for 500 random indices
+random_index = np.random.choice(vector_approx.shape[0], random_num, replace = False)  
+
+vector_approx_shuffled = vector_approx[random_index]
+
+
+x2 = vector_approx_shuffled [:, 0]
+y2 = vector_approx_shuffled[:, 1]
+z2 = vector_approx_shuffled[:, 2]
    
-a2 = vector_approx[:500, :][:, 3]
-b2 = vector_approx[:500, :][:, 4]
-c2 = vector_approx[:500, :][:, 5]
+a2 = vector_approx_shuffled[:, 3]
+b2 = vector_approx_shuffled[:, 4]
+c2 = vector_approx_shuffled[:, 5]
     
-ax.quiver(x2, y2, z2, a2, b2, c2, length = 0.001, color = 'blue')
+ax.quiver(x2, y2, z2, a2, b2, c2, length = 0.0005, color = 'blue')
     
 plt.show()
 # %%

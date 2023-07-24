@@ -1,4 +1,161 @@
 """
+Spectral Exterior Calculus (SEC)
+2-torus T2 Example (Roration)
+Approximations of vector fields on the 2-torus
+usng donut embedding into R^3
+Given pushforward of tangent vectors on the circle
+and determinstically sampled Monte Carlo points on the circle
+"""
+
+
+
+# %%
+import matplotlib.pyplot as plt
+import numpy as np
+import numdifftools as nd
+from numpy import random
+from numpy.linalg import eig as eig
+import multiprocess as mp
+from scipy.integrate import quad
+from scipy.integrate import solve_ivp
+
+
+# Parameters
+I = 10          # Inner index for eigenfunctions
+J = 5           # Outer index for eigenfunctions
+K = 3           # Index for gradients of eigenfunctions
+n = 100          # Number of approximated tangent vectors
+N = 100         # Number of Monte Carlo training data points 
+
+epsilon = 0.15  # RBF bandwidth parameter
+tau = 0         # Weight parameter for Laplacian eigenvalues
+alpha = 1       # Weight parameter for Markov kernel matrix
+a = 1           # Radius of the latitude circle of the torus
+b = 1           # Radius of the meridian circle of the torus
+
+
+"""
+Training data set
+with pushforward of vector fields v on the torus
+and smbedding map F with pushforward F_*v = vF
+"""
+
+
+# Deterministically sampled Monte Carlo training data points
+# the latotude and meridian circles with radius a and b
+def monte_carlo_points(start_pt = 0, end_pt = 2*np.pi, N = 100):
+    u_a = np.zeros(N)
+    u_b = np.zeros(N)
+    
+    subsets = np.arange(0, N+1, (N/50))
+    for i in range(0, int(N/2)):
+        start = int(subsets[i])
+        end = int(subsets[i+1])
+        u_a[start:end] = random.uniform(low = (i/(N/2))*end_pt, high = ((i+1)/(N/2))*end_pt, size = end - start)
+        u_b[start:end] = random.uniform(low = (i/(N/2))*end_pt, high = ((i+1)/(N/2))*end_pt, size = end - start)
+    
+    random.shuffle(u_a)
+    random.shuffle(u_b)
+
+    training_data_a = np.empty([2, N], dtype = float)
+    training_data_b = np.empty([2, N], dtype = float)
+    
+    for j in range(0, N):
+            training_data_a[:, j] = np.array([a*np.cos(u_a[j]), a*np.sin(u_a[j])])
+            training_data_b[:, j] = np.array([b*np.cos(u_b[j]), b*np.sin(u_b[j])])
+    
+    return u_a, u_b, training_data_a, training_data_b
+
+u_a, u_b, training_data_a, training_data_b = monte_carlo_points()
+
+# Create mesh of angles theta and rho for the latitude and meridian cricles
+# and transform into grid of points with these two angles
+THETA_LST, RHO_LST = np.meshgrid(u_a, u_b)
+
+training_angle = np.vstack([THETA_LST.ravel(), RHO_LST.ravel()])
+
+
+sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+
+ax1.scatter(x = training_data_a[0,:], y = training_data_a[1,:], color = 'green')
+ax1.set_xlim([-5,5])
+ax1.set_ylim([-5,5])
+ax1.set_title('Monte Carlo Sampled Latitude Circle with Radius a')
+
+ax2.scatter(x = training_data_b[0,:], y = training_data_b[1,:], color = 'orange')
+ax2.set_xlim([-5,5])
+ax2.set_ylim([-5,5])
+ax2.set_title('Monte Carlo Sampled Meridian Circle with Radius b')
+
+plt.show()
+# %%
+
+
+# %%
+# Functions specifying the coordinates in R3
+# using the angles theat and rho for the latitude and meridian circles
+X_func = lambda theta, rho: (a + b*np.cos(theta))*np.cos(rho)
+Y_func = lambda theta, rho: (a + b*np.cos(theta))*np.sin(rho)
+Z_func = lambda theta: b*np.sin(theta)
+
+# N*N training data points corrdinates in the x, y and z coordinates
+TRAIN_X = X_func(training_angle[0, :], training_angle[1, :])
+TRAIN_Y = Y_func(training_angle[0, :], training_angle[1, :])
+TRAIN_Z = Z_func(training_angle[0, :])
+
+# N*N training data points containing all three coordinates of each point
+training_data = np.vstack([TRAIN_X, TRAIN_Y, TRAIN_Z])
+
+
+x = (a + b*np.cos(training_angle[0, :]))*np.cos(training_angle[1, :])
+y = (a + b*np.cos(training_angle[0, :]))*np.sin(training_angle[1, :])
+z = b*np.sin(training_angle[0, :])
+# %%
+
+
+# X_func_dtheta = lambda theta, rho: -b*np.sin(theta)*np.cos(rho)
+# X_func_drho = lambda theta, rho: -(a + b*np.cos(theta))*np.sin(rho)
+# Y_func_dtheta = lambda theta, rho: -b*np.sin(theta)*np.sin(rho)
+# Y_func_drho = lambda theta, rho: (a + b*np.cos(theta))*np.cos(rho)
+# Z_func_dtheta = lambda theta: b*np.cos(theta)
+# Z_func_drho = lambda theta: 0
+
+# TRAIN_X_DERIVATIVE = np.array([x_dtheta + x_drho for x_dtheta, x_drho in zip(list(map(X_func_dtheta, THETA_LST, RHO_LST)), list(map(X_func_drho, THETA_LST, RHO_LST)))])
+# TRAIN_Y_DERIVATIVE = np.array([y_dtheta + y_drho for y_dtheta, y_drho in zip(list(map(Y_func_dtheta, THETA_LST, RHO_LST)), list(map(Y_func_drho, THETA_LST, RHO_LST)))])
+# TRAIN_Z_DERIVATIVE = np.array(Z_func_dtheta(THETA_LST) + Z_func_drho(THETA_LST))
+
+
+# TRAIN_V = np.empty([n, 6], dtype = float)
+# for i in range(0, n):
+#     TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], TRAIN_X_DERIVATIVE[i], TRAIN_Y_DERIVATIVE[i], TRAIN_Z_DERIVATIVE[i]])
+
+
+# X_1, Y_1, Z_1, U_1, V_1, W_1 = zip(*TRAIN_V)
+
+
+# fig = plt.figure()
+
+# ax1 = fig.add_subplot(121, projection='3d')
+# ax1.set_zlim(-3,3)
+# ax1.plot_surface(x, y, z, rstride=5, cstride=5, color='k', edgecolors='w')
+# ax1.view_init(36, 26)
+
+# ax2 = fig.add_subplot(122, projection='3d')
+# ax2.set_zlim(-3,3)
+# ax2.plot_surface(TRAIN_X, TRAIN_Y, TRAIN_Z, rstride=5, cstride=5, color='k', edgecolors='w')
+# ax2.view_init(0, 0)
+# ax2.set_xticks([])
+
+# plt.show()
+
+
+# Embedding map F and its pushforward F_* applied to vector field v
+F = lambda theta, rho: np.array([(a + b*np.cos(theta))*np.cos(rho), (a + b*np.cos(theta))*np.sin(rho), a + b*np.sin(theta)])
+v1F = lambda theta, rho: np.array([-b*np.sin(theta)*np.cos(rho) - (a + b*np.cos(theta))*np.sin(rho), -b*np.sin(theta)*np.sin(rho) + (a + b*np.cos(theta))*np.cos(rho), b*np.cos(theta)])
+
+
+
+"""
 Functions utilized in the following program
 """
 
@@ -278,11 +435,12 @@ plt.show()
 
 # %%
 # Teuncate singular values of G based based on a small percentage of the largest singular valuecof G
-threshold = 1/(0.01*np.max(s2))      # Threshold value for truncated SVD
-
+threshold = 1/(0.001*np.max(s2))      # Threshold value for truncated SVD
 
 # Compute duall Gram operator G* using pseudoinverse based on truncated singular values of G
-G_dual = np.linalg.pinv(G, rcond = threshold)
+G_dual = np.linalg.pinv(G)
+
+# G_dual = np.linalg.pinv(G, rcond = threshold)
 # G_dual_mc = np.linalg.pinv(G_mc_weighted)
 # %%
 
@@ -385,116 +543,72 @@ p_am = np.einsum('ajl, jlm -> am', h_ajl, d_jlm, dtype = float)
 
 
 # %%
-W_theta_x = np.zeros(100, dtype = float)
-W_theta_y = np.zeros(100, dtype = float)
-W_theta_z = np.zeros(100, dtype = float)
+W_theta_x = np.zeros(int(N**2), dtype = float)
+W_theta_y = np.zeros(int(N**2), dtype = float)
+W_theta_z = np.zeros(int(N**2), dtype = float)
 
-vector_approx = np.empty([100, 6], dtype = float)
+vector_approx = np.empty([int(N**2), 6], dtype = float)
 
 def W_theta(training_data):
     varphi_xyz = np.real(varphi(training_data)).T
     return np.matmul(p_am, varphi_xyz)
 
-example_training = training_data[:, :100]
-W_temp = W_theta(example_training)
+W_temp = W_theta(training_data)
 
 W_theta_x = W_temp[0, :]
-W_theta_y = W_temp[0, :]
-W_theta_z = W_temp[0, :]
+W_theta_y = W_temp[1, :]
+W_theta_z = W_temp[2, :]
 
-# %%
-for i in range(0, 100):
+
+for i in range(0, int(N**2)):
     vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], W_theta_x[i], W_theta_y[i], W_theta_z[i]])
 
 # %%
 
 # %%
-def plot_vf(vector_approx):
-    plt.clf()
+print(vector_approx[:10,3:6])
+# %%
+
+
+
+
+
+
+# %%
+def plot_torus(precision, a = 1, b = 1):
+    U_t = np.linspace(0, 2*np.pi, precision)
+    V_t = np.linspace(0, 2*np.pi, precision)
     
-    # Plot the dataset
-    ax = plt.axes(projection ='3d')
+    U_t, V_t = np.meshgrid(U_t, V_t)
+    
+    X_t = (a + b*np.cos(V_t))*np.cos(U_t)
+    Y_t = (a + b*np.cos(V_t))*np.sin(U_t)
+    Z_t = a*np.sin(V_t)
+    
+    return X_t, Y_t, Z_t
+
+    
+
+x_t, y_t, z_t = plot_torus(100, 1, 1)
+
+ax = plt.axes(projection = '3d')
+
+ax.set_xlim(-3,3)
+ax.set_ylim(-3,3)
+ax.set_zlim(-3,3)
+
+ax.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
+
+
+x2 = vector_approx[:500, :][:, 0]
+y2 = vector_approx[:500, :][:, 1]
+z2 = vector_approx[:500, :][:, 2]
    
-    x = vector_approx[:, 0]
-    y = vector_approx[:, 1]
-    z = vector_approx[:, 2]
-   
-    a = vector_approx[:, 3]
-    b = vector_approx[:, 4]
-    c = vector_approx[:, 5]
+a2 = vector_approx[:500, :][:, 3]
+b2 = vector_approx[:500, :][:, 4]
+c2 = vector_approx[:500, :][:, 5]
     
-    ax.quiver(x, y, z, a, b, c,length = 0.5, color = 'blue')
+ax.quiver(x2, y2, z2, a2, b2, c2, length = 0.001, color = 'blue')
     
-    plt.show()
-    
-plot_vf(vector_approx)
-# %%
-
-# %%
-print(vector_approx[:20,2:5])
-# %%
-
-
-def W_x(x, y, z):
-    varphi_xyz = np.real(varphi(np.reshape(np.array([x, y, z]), (3, 1))))
-    return np.sum(p_am[0, :]*varphi_xyz)
-
-def W_y(x, y, z):
-    varphi_xyz = np.real(varphi(np.reshape(np.array([x, y, z]), (3, 1))))
-    return np.sum(p_am[1, :]*varphi_xyz)
-
-def W_z(x, y, z):
-    varphi_xyz = np.real(varphi(np.reshape(np.array([x, y, z]), (3, 1))))
-    return np.sum(p_am[2, :]*varphi_xyz)
-
-# %%
-print(training_data.shape)
-a = training_data[:, :100]
-b = varphi(a)
-print(b.shape)
-# %%
-
-# %%
-c = p_am*b
-print(c.shape)
-# %%
-
-
-
-for i in range(0, 10):
-    W_theta_x[i] = W_x(TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i])
-    W_theta_y[i] = W_y(TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i])
-    W_theta_z[i] = W_z(TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i])
-
-    vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], W_theta_x[i], W_theta_y[i], W_theta_z[i]])
-
-print(W_theta_x)
-print(W_theta_y)
-print(W_theta_z)
-# %%
-
-
-# %%
-# Plotting SEC approximated vector fields in R3
-# using the donut embedding
-
-def plot_vf(vector_approx):
-    plt.clf()
-    
-    # Plot the dataset
-    ax = plt.axes(projection ='3d')
-   
-    x = vector_approx[:, 0]
-    y = vector_approx[:, 1]
-    z = vector_approx[:, 2]
-   
-    a = vector_approx[:, 3]
-    b = vector_approx[:, 4]
-    c = vector_approx[:, 5]
-    
-    ax.quiver(x, y, z, a, b, c,length =0.1)
-    
-    plt.show()
-    
-plot_vf(vector_approx)
+plt.show()
 # %%

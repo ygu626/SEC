@@ -30,7 +30,7 @@ N = 100         # Number of Monte Carlo training data points
 epsilon = 0.15  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
-a = 1           # Radius of the latitude circle of the torus
+a = 4           # Radius of the latitude circle of the torus
 b = 1           # Radius of the meridian circle of the torus
 
 
@@ -148,11 +148,11 @@ z = b*np.sin(training_angle[0, :])
 
 # plt.show()
 
-
+# %%
 # Embedding map F and its pushforward F_* applied to vector field v
 F = lambda theta, rho: np.array([(a + b*np.cos(theta))*np.cos(rho), (a + b*np.cos(theta))*np.sin(rho), a + b*np.sin(theta)])
 v1F = lambda theta, rho: np.array([-b*np.sin(theta)*np.cos(rho) - (a + b*np.cos(theta))*np.sin(rho), -b*np.sin(theta)*np.sin(rho) + (a + b*np.cos(theta))*np.cos(rho), b*np.cos(theta)])
-
+# %%
 
 
 """
@@ -318,7 +318,7 @@ cont_result = varphi(training_data)
 # %%
 """
 Check accuracy of diffusion maps approximation
-fir eigenvalues and eigenfunctions of 0-Laplacian
+for eigenvalues and eigenfunctions of 0-Laplacian
 """
 
 # Check approximations for Laplacian eigenbasis agree with true eigenbasis
@@ -433,9 +433,10 @@ plt.show()
 # %%
 
 
+
 # %%
 # Teuncate singular values of G based based on a small percentage of the largest singular valuecof G
-threshold = 1/(0.001*np.max(s2))      # Threshold value for truncated SVD
+threshold = 1/(0.5*np.max(s2))      # Threshold value for truncated SVD
 
 # Compute duall Gram operator G* using pseudoinverse based on truncated singular values of G
 G_dual = np.linalg.pinv(G)
@@ -569,6 +570,7 @@ for i in range(0, int(N**2)):
 
 # %%
 
+
 # %%
 print(vector_approx[:3, :])
 # %%
@@ -576,32 +578,32 @@ print(vector_approx[:3, :])
 
 
 # %%
-def plot_torus(precision, a = 1, b = 1):
+def plot_torus(precision, a = 4, b = 1):
     U_t = np.linspace(0, 2*np.pi, precision)
     V_t = np.linspace(0, 2*np.pi, precision)
     
     U_t, V_t = np.meshgrid(U_t, V_t)
     
-    X_t = (a + b*np.cos(V_t))*np.cos(U_t)
-    Y_t = (a + b*np.cos(V_t))*np.sin(U_t)
-    Z_t = a*np.sin(V_t)
+    X_t = (a + b*np.cos(U_t))*np.cos(V_t)
+    Y_t = (a + b*np.cos(U_t))*np.sin(V_t)
+    Z_t = b*np.sin(U_t)
     
     return X_t, Y_t, Z_t
 
     
 
-x_t, y_t, z_t = plot_torus(100, 1, 1)
+x_t, y_t, z_t = plot_torus(100, 4, 1)
 
 ax = plt.axes(projection = '3d')
 
-ax.set_xlim(-4,4)
-ax.set_ylim(-4,4)
-ax.set_zlim(-4,4)
+ax.set_xlim(-5,5)
+ax.set_ylim(-5,5)
+ax.set_zlim(-5,5)
 
 ax.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
 
 
-random_num = 200    # for 500 random indices
+random_num = 100    # for 500 random indices
 random_index = np.random.choice(vector_approx.shape[0], random_num, replace = False)  
 
 vector_approx_shuffled = vector_approx[random_index]
@@ -615,7 +617,7 @@ a2 = vector_approx_shuffled[:, 3]
 b2 = vector_approx_shuffled[:, 4]
 c2 = vector_approx_shuffled[:, 5]
     
-ax.quiver(x2, y2, z2, a2, b2, c2, length = 0.0005, color = 'blue')
+ax.quiver(x2, y2, z2, a2, b2, c2, length = 10, color = 'blue')
     
 plt.show()
 # %%

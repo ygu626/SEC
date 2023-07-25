@@ -15,9 +15,10 @@ import numpy as np
 import numdifftools as nd
 from numpy import random
 from numpy.linalg import eig as eig
-import multiprocess as mp
+from scipy.sparse.linalg import eigs as eigs
 from scipy.integrate import quad
 from scipy.integrate import solve_ivp
+import multiprocess as mp
 
 
 # Parameters
@@ -110,7 +111,6 @@ training_data = np.vstack([TRAIN_X, TRAIN_Y, TRAIN_Z])
 x = (a + b*np.cos(training_angle[0, :]))*np.cos(training_angle[1, :])
 y = (a + b*np.cos(training_angle[0, :]))*np.sin(training_angle[1, :])
 z = b*np.sin(training_angle[0, :])
-# %%
 
 
 # X_func_dtheta = lambda theta, rho: -b*np.sin(theta)*np.cos(rho)
@@ -147,17 +147,17 @@ z = b*np.sin(training_angle[0, :])
 # ax2.set_xticks([])
 
 # plt.show()
-
-# %%
-# Embedding map F and its pushforward F_* applied to vector field v
-F = lambda theta, rho: np.array([(a + b*np.cos(theta))*np.cos(rho), (a + b*np.cos(theta))*np.sin(rho), a + b*np.sin(theta)])
-v1F = lambda theta, rho: np.array([-b*np.sin(theta)*np.cos(rho) - (a + b*np.cos(theta))*np.sin(rho), -b*np.sin(theta)*np.sin(rho) + (a + b*np.cos(theta))*np.cos(rho), b*np.cos(theta)])
 # %%
 
 
+# %%
 """
 Functions utilized in the following program
 """
+
+# Embedding map F and its pushforward F_* applied to vector field v
+F = lambda theta, rho: np.array([(a + b*np.cos(theta))*np.cos(rho), (a + b*np.cos(theta))*np.sin(rho), a + b*np.sin(theta)])
+v1F = lambda theta, rho: np.array([-b*np.sin(theta)*np.cos(rho) - (a + b*np.cos(theta))*np.sin(rho), -b*np.sin(theta)*np.sin(rho) + (a + b*np.cos(theta))*np.cos(rho), b*np.cos(theta)])
 
 
 # Double and triple products of functions
@@ -190,6 +190,7 @@ def dist_matrix(x_1,x_2):
 # %%
 
 
+
 # %%
 """
 Implementation of diffusion maps algorithm
@@ -220,10 +221,8 @@ def make_k_hat(k, q):
         k_hat_xy = np.divide(k(x, y), np.matmul(q_x, q_y))
         return k_hat_xy
     return k_hat
-# %%
 
 
-# %%
 # Build normalized kernel matrix K_hat
 q = make_normalization_func(k, training_data)
 k_hat = make_k_hat(k, q)
@@ -231,11 +230,13 @@ K_hat = k_hat(training_data, training_data)
 # print(K_hat[:2,:2])
 # %%
 
+
 # %%
 # Normalization function d that corresponds to diagonal matrix D
 d = make_normalization_func(k_hat, training_data)
 D = d(training_data)
 # %%
+
 
 # %%
 # Markov kernel function p
@@ -274,7 +275,7 @@ S = s(training_data, training_data)
 
 # %%
 # Solve eigenvalue problem for similarity matrix S
-eigenvalues, eigenvectors = eig(S) 
+eigenvalues, eigenvectors = eigs(S, k = 200) 
 index = eigenvalues.argsort()[::-1][:2*I+1]
 Lambs = eigenvalues[index]
 Phis = np.real(eigenvectors[:, index])
@@ -286,10 +287,9 @@ for i in range(0, 2*I+1):
             # lambs_dm[i] = (1 - np.real(Lambs[i]))/(epsilon**2)   
 
 print(lambs_dm)         
-# %%
 
 
-# %%
+
 # Normalize eigenfunctions Phi_j
 Phis_normalized = np.empty([N*N, 2*I+1], dtype = float)
 for j in range(0, 2*I+1):
@@ -308,18 +308,18 @@ Lambs_normalized = np.power(Lambs, 4)
 varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
 # %%
 
+
+
 # %%
 # Apply the coninuous extensiom varphi to the training data set
-cont_result = varphi(training_data)
-# %%
+varphi_xyz = varphi(training_data)
 
 
-
-# %%
 """
 Check accuracy of diffusion maps approximation
 for eigenvalues and eigenfunctions of 0-Laplacian
 """
+
 
 # Check approximations for Laplacian eigenbasis agree with true eigenbasis
 # by ploting against linear combinations of true eigenfunctions 
@@ -327,8 +327,8 @@ for eigenvalues and eigenfunctions of 0-Laplacian
 x_coords = training_angle[0, :]
 y_coords = training_angle[1, :]
 
-z_true = Phis_normalized[:, 2]
-z_dm = np.real(cont_result[:, 2])
+z_true = Phis_normalized[:, 14]
+z_dm = np.real(varphi_xyz[:, 14])
 
 
 # Creating figure
@@ -356,9 +356,8 @@ for pushforward of vector fields on the 2-torus embedded in R3
 
 # Fourier coefficients F_ak pf F w.r.t. difusion maps approximated eigenvectors Phi_j
 F_ak = (1/(N**2))*np.matmul(F(training_angle[0, :], training_angle[1, :]), Phis_normalized)
-# %%
 
-# %%
+
 # Compute c_ijp coefficients
 # using Monte Carlo integration
 pool = mp.Pool()
@@ -372,11 +371,9 @@ c = pool.starmap(c_func,
                 for p in range(0, 2 * I + 1)])
             
 c = np.reshape(np.array(c), (2 * I + 1, 2 * I + 1, 2 * I + 1))
-print(c[:2,:2,:2])
-# %%
+# print(c[:2,:2,:2])
 
 
-# %%
 # Compute g_ijp Riemannian metric coefficients
 # using Monte Carlo integration
 g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
@@ -396,8 +393,9 @@ g = np.multiply(g_coeff, c)
 #                         for p in range(0, 2*I+1):
 #                                     g[i,j,p] = (lambs[i] + lambs[j] - lambs[p])*c[i,j,p]/2
          
-print(g[:,:2,:2])
+# print(g[:,:2,:2])
 # %%
+
 
 
 # %%
@@ -409,11 +407,9 @@ G = np.einsum('ipm, jqm -> ijpq', c, g, dtype = float)
 G = G[:(2*J+1), :(2*K+1), :(2*J+1), :(2*K+1)]
 G = np.reshape(G, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
 
-print(G[:2,:2])
-# %%
+# print(G[:2,:2])
 
 
-# %%
 # Perform singular value decomposition (SVD) of the Gram operator G
 # and plot these singular values
 u2, s2, vh = np.linalg.svd(G, full_matrices = True, compute_uv = True, hermitian = False)
@@ -436,7 +432,7 @@ plt.show()
 
 # %%
 # Teuncate singular values of G based based on a small percentage of the largest singular valuecof G
-threshold = 1/(0.5*np.max(s2))      # Threshold value for truncated SVD
+threshold = 1/(0.01*np.max(s2))      # Threshold value for truncated SVD
 
 # Compute duall Gram operator G* using pseudoinverse based on truncated singular values of G
 G_dual = np.linalg.pinv(G)
@@ -444,7 +440,6 @@ G_dual = np.linalg.pinv(G)
 # G_dual = np.linalg.pinv(G, rcond = threshold)
 # G_dual_mc = np.linalg.pinv(G_mc_weighted)
 # %%
-
 
 
 # %%
@@ -461,10 +456,8 @@ def monte_carlo_product(Phis, training_angle, N = 100):
     integral = (1/(N**2))*np.sum(Phis*v_an, axis = 1)
     
     return integral
-# %%
 
 
-# %%
 # Compute b_am entries using (L2) deterministic Monte Carlo integral
 pool = mp.Pool()
 
@@ -476,26 +469,19 @@ b_am = pool.map(b_func,
                 [m for m in range(0, 2 * I + 1)])
 
 b_am = np.array(b_am).T
-# %%
 
 
-# %%
 # Apply analysis operator T to obtain v_hat_prime
 # using pushforward vF of vector field v 
 # and Monte Carlo integration with weights
 gamma_km = np.einsum('ak, am -> km', F_ak, b_am, dtype = float)
-# %%
 
 
-# %%
 g = g[:(2*K+1), :, :]
 
-
 eta_qlm = np.einsum('qkl, km -> qlm', g, gamma_km, dtype = float)
-# %%
 
 
-# %%
 c = c[:(2*J+1), :, :]
 
 
@@ -507,10 +493,8 @@ for q in range(0, 2*K+1):
 # v_hat_prime = np.reshape(np.array(v_hat_prime), ((2*J+1), (2*K+1)))
 v_hat_prime = np.reshape(v_hat_prime, ((2*J+1)*(2*K+1)))
 # print(v_hat_prime[:3,:3])
-# %%
 
 
-# %%
 # Apply dual Gram operator G* to obtain v_hat 
 # using pushforward vF and original vector field v
 # Both with Monte Carlo integration with weights
@@ -533,9 +517,8 @@ for j in range(0, 2*K+1):
 
 
 h_ajl = np.einsum('ak, jkl -> ajl', F_ak, g_weighted, dtype = float)
-# %%
 
-# %%
+
 # c = c[:(2*J+1), :, :]
 d_jlm = np.einsum('ij, ilm -> jlm', v_hat, c, dtype = float)
 
@@ -552,8 +535,8 @@ W_theta_z = np.zeros(int(N**2), dtype = float)
 
 vector_approx = np.empty([int(N**2), 6], dtype = float)
 
-def W_theta(training_data):
-    varphi_xyz = np.real(varphi(training_data))
+def W_theta(varphi_xyz):
+    varphi_xyz = np.real(varphi_xyz)
     
     for i in range(0, int(N**2)):
         W_theta_x[i] = np.sum(p_am[0, :]*varphi_xyz[i, :])
@@ -562,16 +545,14 @@ def W_theta(training_data):
 
     return W_theta_x, W_theta_y, W_theta_z
 
-W_x, W_y, W_z = W_theta(training_data)
+W_x, W_y, W_z = W_theta(varphi_xyz)
 
 vector_approx = np.empty([int(N**2), 6], dtype = float)
 for i in range(0, int(N**2)):
     vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], W_x[i], W_y[i], W_z[i]])
 
-# %%
 
 
-# %%
 print(vector_approx[:3, :])
 # %%
 
@@ -588,11 +569,15 @@ def plot_torus(precision, a = 4, b = 1):
     Y_t = (a + b*np.cos(U_t))*np.sin(V_t)
     Z_t = b*np.sin(U_t)
     
-    return X_t, Y_t, Z_t
+    random_num = 100    # for 500 random indices
+    random_index = np.random.choice(vector_approx.shape[0], random_num, replace = False)  
+
+    
+    return X_t, Y_t, Z_t, random_index
 
     
 
-x_t, y_t, z_t = plot_torus(100, 4, 1)
+x_t, y_t, z_t, rd_idx = plot_torus(100, 4, 1)
 
 ax = plt.axes(projection = '3d')
 
@@ -603,13 +588,10 @@ ax.set_zlim(-5,5)
 ax.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
 
 
-random_num = 100    # for 500 random indices
-random_index = np.random.choice(vector_approx.shape[0], random_num, replace = False)  
-
-vector_approx_shuffled = vector_approx[random_index]
+vector_approx_shuffled = vector_approx[rd_idx]
 
 
-x2 = vector_approx_shuffled [:, 0]
+x2 = vector_approx_shuffled[:, 0]
 y2 = vector_approx_shuffled[:, 1]
 z2 = vector_approx_shuffled[:, 2]
    
@@ -617,7 +599,7 @@ a2 = vector_approx_shuffled[:, 3]
 b2 = vector_approx_shuffled[:, 4]
 c2 = vector_approx_shuffled[:, 5]
     
-ax.quiver(x2, y2, z2, a2, b2, c2, length = 10, color = 'blue')
+ax.quiver(x2, y2, z2, a2, b2, c2, length = 0.05, color = 'blue')
     
 plt.show()
 # %%

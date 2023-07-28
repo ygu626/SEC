@@ -243,6 +243,84 @@ def make_varphi(k, x_train, lambs, phis):
 # Produce continuous extentions varphi_j for the eigenfunctions Phi_j
 Lambs_normalized = np.power(Lambs, 4)
 varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
+# %%
+
+# %%
+# Scatter plots of the continupus extensions varphi_j for certain j's
+
+angle_new = np.linspace(-20*np.pi, 20*np.pi, 10000)
+coords_new = np.array([np.cos(angle_new), np.sin(angle_new)])
+varphi_xy_new = varphi(coords_new)
+
+
+sidefig, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9, ax10) = plt.subplots(10, 1, figsize=(6, 50))
+sidefig.suptitle('Scatter PLOts of varphi_j for j = 0, ..., 9')
+
+ax1.scatter(x = angle_new, y = varphi_xy_new[:, 0], color='red')
+ax1.set_xlim([-65, 65])
+ax1.set_xlim([-2, 2])
+ax1.set_xlabel("Angle theta")
+ax1.set_ylabel("Varphi_0(theta)")
+
+ax2.scatter(x = angle_new, y = varphi_xy_new[:, 1], color='green')
+ax2.set_xlim([-65, 65])
+ax2.set_xlim([-2, 2])
+ax2.set_xlabel("Angle theta")
+ax2.set_ylabel("Varphi_1(theta)")
+
+ax3.scatter(x = angle_new, y = varphi_xy_new[:, 2], color='orange')
+ax3.set_xlim([-65, 65])
+ax3.set_xlim([-2, 2])
+ax3.set_xlabel("Angle theta")
+ax3.set_ylabel("Varphi_2(theta)")
+
+ax4.scatter(x = angle_new, y = varphi_xy_new[:, 3], color='blue')
+ax4.set_xlim([-65, 65])
+ax4.set_xlim([-2, 2])
+ax4.set_xlabel("Angle theta")
+ax4.set_ylabel("Varphi_3(theta)")
+
+ax5.scatter(x = angle_new, y = varphi_xy_new[:, 4], color='purple')
+ax5.set_xlim([-65, 65])
+ax5.set_xlim([-2, 2])
+ax5.set_xlabel("Angle theta")
+ax5.set_ylabel("Varphi_4(theta)")
+
+ax6.scatter(x = angle_new, y = varphi_xy_new[:, 5], color='yellow')
+ax6.set_xlim([-65, 65])
+ax6.set_xlim([-2, 2])
+ax6.set_xlabel("Angle theta")
+ax6.set_ylabel("Varphi_5(theta)")
+
+ax7.scatter(x = angle_new, y = varphi_xy_new[:, 6], color='brown')
+ax7.set_xlim([-65, 65])
+ax7.set_xlim([-2, 2])
+ax7.set_xlabel("Angle theta")
+ax7.set_ylabel("Varphi_6(theta)")
+
+ax8.scatter(x = angle_new, y = varphi_xy_new[:, 7], color='cyan')
+ax8.set_xlim([-65, 65])
+ax8.set_xlim([-2, 2])
+ax8.set_xlabel("Angle theta")
+ax8.set_ylabel("Varphi_7(theta)")
+
+ax9.scatter(x = angle_new, y = varphi_xy_new[:, 8], color='black')
+ax9.set_xlim([-65, 65])
+ax9.set_xlim([-2, 2])
+ax9.set_xlabel("Angle theta")
+ax9.set_ylabel("Varphi_8(theta)")
+
+
+ax10.scatter(x = angle_new, y = varphi_xy_new[:, 9], color='magenta')
+ax10.set_xlim([-65, 65])
+ax10.set_xlim([-2, 2])
+ax10.set_xlabel("Angle theta")
+ax10.set_ylabel("Varphi_9(theta)")
+
+
+plt.show()
+
+# %%
 
 
 
@@ -377,7 +455,7 @@ to obtain v_hat'
 
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
 def monte_carlo_product(Phis, u, N = 800):
-    v_an = v2F(u)
+    v_an = v1F(u)
     integral = (1/N)*np.sum(Phis*v_an, axis = 1)
     
     return integral
@@ -457,6 +535,8 @@ for i in range(0, n):
     W_theta_y[i] = W_y(TRAIN_X[i], TRAIN_Y[i])
     vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], W_theta_x[i], W_theta_y[i]])
 
+
+
 print(W_theta_x)
 print(W_theta_y)
 
@@ -476,7 +556,6 @@ t = np.linspace(0, 2*np.pi, 100000)
 ax.plot(np.cos(t), np.sin(t), linewidth = 2.5, color = 'black')
 
 plt.draw()
-plt.show()
 
 
 sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
@@ -510,8 +589,8 @@ using meshgrid as the training data set
 # %%
 m = 20           #Square root of number of points used in quiver plot of F_*
 
-x_train_new = np.linspace(-1.5, 1.5, m)
-y_train_new = np.linspace(-1.5, 1.5, m)
+x_train_new = np.linspace(-10, 10, m)
+y_train_new = np.linspace(-1000, 1000, m)
 
 X_TRAIN_NEW, Y_TRAIN_NEW = np.meshgrid(x_train_new, y_train_new)
 # THETA_TRAIN_NEW = np.angle(X_TRAIN_NEW + (1j)*Y_TRAIN_NEW)
@@ -532,7 +611,7 @@ V_TRAIN_NEW = W_theta_y_new
 # U_TRAIN_NEW = W_theta_x_new / np.sort(W_theta_x_new**2 + W_theta_y_new**2)
 # V_TRAIN_NEW = W_theta_y_new / np.sort(W_theta_x_new**2 + W_theta_y_new**2)
 
-
+"""
 # Finding fixed points of the compontent functions of vF
 def rootsearch(f, a, b, dx):
     x1 = a
@@ -620,7 +699,7 @@ for i in range(0, len(v2F_fixed_points)):
     v2F_fixed_points.append(np.pi + (np.pi - v2F_fixed_points[i]))
 
 print(v2F_fixed_points)
-
+"""
 
 # Quiver plot of vF 
 # (pushforward of the embedding function F applied to v)
@@ -629,16 +708,17 @@ plt.figure()
 ax = plt.gca()
 ax.quiver(X_TRAIN_NEW, Y_TRAIN_NEW, U_TRAIN_NEW, V_TRAIN_NEW)
 
-ax.set_xlim([-2,2])
-ax.set_ylim([-2,2])
+ax.set_xlim([-12,12])
+ax.set_ylim([-1002,1002])
 ax.set_title('Quiver Plot of the SEC Approximated Function vF: R2-->R2')
 
-
+"""
 for i in range(0, len(v2F_fixed_points)):
     x_fixed = np.linspace(-2, 0, 100)
     y_fixed = np.tan(v2F_fixed_points[i])*x_fixed
     
     plt.plot(x_fixed, y_fixed, color = 'green')
+"""
 
 plt.show()
 # %%
@@ -664,7 +744,6 @@ True System
 
 # Define derivative function for the true system
 def f_true(t, y):
-    # dydt = [-np.sin(np.angle(y[0]+(1j)*y[1])), np.cos(np.angle(y[0]+(1j)*y[1]))]
     # dydt = [-np.sin(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0]))]
     dydt = [-np.sin(np.arctan2(y[1], y[0])) - C*np.sin(np.arctan2(y[1], y[0]))*np.cos(np.arctan2(y[1], y[0])), np.cos(np.arctan2(y[1], y[0])) + C*(np.cos(np.arctan2(y[1], y[0]))**2)]
     # dydt = [-np.exp(C*np.cos(np.arctan2(y[1], y[0])))*np.sin(np.arctan2(y[1], y[0])), np.exp(C*np.cos(np.arctan2(y[1], y[0])))*np.cos(np.arctan2(y[1], y[0]))]

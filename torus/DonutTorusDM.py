@@ -10,9 +10,10 @@ and determinstically sampled Monte Carlo points on the circle
 
 
 # %%
+import matplotlib
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
-import numdifftools as nd
 from numpy import random
 from numpy.linalg import eig as eig
 from scipy.sparse.linalg import eigs as eigs
@@ -123,30 +124,6 @@ z = b*np.sin(training_angle[0, :])
 # TRAIN_X_DERIVATIVE = np.array([x_dtheta + x_drho for x_dtheta, x_drho in zip(list(map(X_func_dtheta, THETA_LST, RHO_LST)), list(map(X_func_drho, THETA_LST, RHO_LST)))])
 # TRAIN_Y_DERIVATIVE = np.array([y_dtheta + y_drho for y_dtheta, y_drho in zip(list(map(Y_func_dtheta, THETA_LST, RHO_LST)), list(map(Y_func_drho, THETA_LST, RHO_LST)))])
 # TRAIN_Z_DERIVATIVE = np.array(Z_func_dtheta(THETA_LST) + Z_func_drho(THETA_LST))
-
-
-# TRAIN_V = np.empty([n, 6], dtype = float)
-# for i in range(0, n):
-#     TRAIN_V[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], TRAIN_X_DERIVATIVE[i], TRAIN_Y_DERIVATIVE[i], TRAIN_Z_DERIVATIVE[i]])
-
-
-# X_1, Y_1, Z_1, U_1, V_1, W_1 = zip(*TRAIN_V)
-
-
-# fig = plt.figure()
-
-# ax1 = fig.add_subplot(121, projection='3d')
-# ax1.set_zlim(-3,3)
-# ax1.plot_surface(x, y, z, rstride=5, cstride=5, color='k', edgecolors='w')
-# ax1.view_init(36, 26)
-
-# ax2 = fig.add_subplot(122, projection='3d')
-# ax2.set_zlim(-3,3)
-# ax2.plot_surface(TRAIN_X, TRAIN_Y, TRAIN_Z, rstride=5, cstride=5, color='k', edgecolors='w')
-# ax2.view_init(0, 0)
-# ax2.set_xticks([])
-
-# plt.show()
 # %%
 
 
@@ -275,18 +252,18 @@ S = s(training_data, training_data)
 
 # %%
 # Solve eigenvalue problem for similarity matrix S
-eigenvalues, eigenvectors = eigs(S, k = 100) 
+eigenvalues, eigenvectors = eigs(S, k = 150) 
 index = eigenvalues.argsort()[::-1][:2*I+1]
 Lambs = eigenvalues[index]
 Phis = np.real(eigenvectors[:, index])
 
 # Compute approximated 0-Laplacian eigengunctions
-lambs_dm = np.empty(2*I+1, dtype = float)
+lambs = np.empty(2*I+1, dtype = float)
 for i in range(0, 2*I+1):
-            lambs_dm[i] = 4*(-np.log(np.real(Lambs[i]))/(epsilon**2))
+            lambs[i] = 4*(-np.log(np.real(Lambs[i]))/(epsilon**2))
             # lambs_dm[i] = (1 - np.real(Lambs[i]))/(epsilon**2)   
 
-print(lambs_dm)         
+print(lambs)         
 
 
 
@@ -313,12 +290,48 @@ varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
 # %%
 # Apply the coninuous extensiom varphi to the training data set
 varphi_xyz = varphi(training_data)
+# %%
 
 
+# %%
 """
 Check accuracy of diffusion maps approximation
 for eigenvalues and eigenfunctions of 0-Laplacian
 """
+
+x_coords = THETA_LST
+y_coords = RHO_LST
+
+z_true = np.reshape(Phis_normalized[:, 3], (N, N))
+z_dm = np.reshape(np.real(varphi_xyz[:, 3]), (N, N))
+
+
+# Plot 3D surface of true and diffusion maps approximated 0-Laplacian eigenvectors z_true and z_dm
+# against theta and rho with colors corresponding to the values of z_true and z_dm
+fig = plt.figure()
+
+ax = fig.gca(projection = Axes3D.name)
+ax.plot_wireframe(x_coords, y_coords, z_true)
+# ax.plot_wireframe(x_coords, y_coords, z_dm)
+
+
+cmap = plt.cm.plasma
+norm = matplotlib.colors.Normalize(vmin = np.min(z_true), vmax = np.max(z_true))
+# norm = matplotlib.colors.Normalize(vmin = np.min(z_dm), vmax = np.max(z_dm))
+
+colors = cmap(norm(z_true))
+# colors = cmap(norm(z_dm))
+
+ax.plot_surface(x_coords, y_coords, np.zeros_like(x_coords), cstride = 1, rstride = 1, facecolors = colors, shade = False)
+
+sc = matplotlib.cm.ScalarMappable(cmap = cmap, norm = norm)
+sc.set_array([])
+plt.colorbar(sc)
+
+plt.title('0-Laplacian eigenvectors against theta and rho')
+
+plt.show()
+# %%
 
 
 # Check approximations for Laplacian eigenbasis agree with true eigenbasis
@@ -331,11 +344,27 @@ z_true = Phis_normalized[:, 14]
 z_dm = np.real(varphi_xyz[:, 14])
 
 
-# Creating figure
+# Plot 3D surface of true 0-Laplacian eigenvectors z_true
+# against theta and rho with colors corresponding to the values of z_true
 fig = plt.figure(figsize = (10,10))
 
 ax1 = fig.add_subplot(121, projection='3d')
 ax1.scatter3D(x_coords, y_coords, z_true, color = "blue")
+
+ax2 = fig.add_subplot(122, projection='3d')
+ax2.scatter3D(x_coords, y_coords, z_dm, color = "red")
+
+plt.title("3D scatter plot of diffusion maps approximation")
+ 
+plt.show()
+
+
+# Plot 3D surface of diffusion maps approximated 0-Laplacian eigenfunctions z_dm
+# against theta and rho with colors corresponding to the values of z_dm
+fig = plt.figure(figsize = (10,10))
+
+ax1 = fig.add_subplot(121, projection='3d')
+ax1.scatter3D(x_coords, y_coords, z_dm, color = "blue")
 
 ax2 = fig.add_subplot(122, projection='3d')
 ax2.scatter3D(x_coords, y_coords, z_dm, color = "red")
@@ -382,7 +411,7 @@ g_coeff = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
 for i in range(0, 2*I+1):
             for j in range(0, 2*I+1):
                         for p in range(0, 2*I+1):
-                                    g_coeff[i,j,p] = (lambs_dm[i] + lambs_dm[j] - lambs_dm[p])/2
+                                    g_coeff[i,j,p] = (lambs[i] + lambs[j] - lambs[p])/2
 
 g = np.multiply(g_coeff, c)
 
@@ -432,17 +461,15 @@ plt.show()
 
 # %%
 # Teuncate singular values of G based based on a small percentage of the largest singular valuecof G
-threshold = 0.001/(np.max(s2))      # Threshold value for truncated SVD
+threshold = 0.1/(np.max(s2))      # Threshold value for truncated SVD
 
 # Compute duall Gram operator G* using pseudoinverse based on truncated singular values of G
 # G_dual = np.linalg.pinv(G)
 
 G_dual = np.linalg.pinv(G, rcond = threshold)
 # G_dual_mc = np.linalg.pinv(G_mc_weighted)
-# %%
 
 
-# %%
 """
 Applying analysis operator T to the pushforwaed F_*v (instead of the vector field v)
 using Monte Carlo integration
@@ -500,11 +527,9 @@ v_hat_prime = np.reshape(v_hat_prime, ((2*J+1)*(2*K+1)))
 # Both with Monte Carlo integration with weights
 v_hat = np.matmul(G_dual, v_hat_prime)
 v_hat = np.reshape(v_hat, (2*J+1, 2*K+1))
-# %%
 
 
 
-# %%
 # Apply pushforward map F_* of the embedding F to v_hat to obtain approximated vector fields
 # using Monte Carlo integration with weights
 
@@ -523,11 +548,8 @@ h_ajl = np.einsum('ak, jkl -> ajl', F_ak, g_weighted, dtype = float)
 d_jlm = np.einsum('ij, ilm -> jlm', v_hat, c, dtype = float)
 
 p_am = np.einsum('ajl, jlm -> am', h_ajl, d_jlm, dtype = float)
-# %%
 
 
-
-# %%
 W_theta_x = np.zeros(int(N**2), dtype = float)
 W_theta_y = np.zeros(int(N**2), dtype = float)
 W_theta_z = np.zeros(int(N**2), dtype = float)
@@ -551,14 +573,9 @@ vector_approx = np.empty([int(N**2), 6], dtype = float)
 for i in range(0, int(N**2)):
     vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], W_x[i], W_y[i], W_z[i]])
 
+# print(vector_approx[:3, :])
 
 
-print(vector_approx[:3, :])
-# %%
-
-
-
-# %%
 def plot_torus(precision, a = 4, b = 1):
     U_t = np.linspace(0, 2*np.pi, precision)
     V_t = np.linspace(0, 2*np.pi, precision)

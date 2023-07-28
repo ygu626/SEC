@@ -306,7 +306,7 @@ z_true = np.reshape(Phis_normalized[:, 3], (N, N))
 z_dm = np.reshape(np.real(varphi_xyz[:, 3]), (N, N))
 
 
-# Plot 3D surface of true and diffusion maps approximated 0-Laplacian eigenvectors z_true and z_dm
+# 3D surface plots of true and diffusion maps approximated 0-Laplacian eigenvectors z_true and z_dm
 # against theta and rho with colors corresponding to the values of z_true and z_dm
 fig = plt.figure()
 
@@ -333,44 +333,20 @@ plt.title('0-Laplacian eigenvectors against theta and rho')
 plt.show()
 # %%
 
+# %%
+# pcolor plots of true and diffusion maps approximated 0-Laplacian 
+# eigenvectors and eigenfunctions z_true and z_dm values
 
-# Check approximations for Laplacian eigenbasis agree with true eigenbasis
-# by ploting against linear combinations of true eigenfunctions 
+fig = plt.figure(figsize=(8, 16))
 
-x_coords = training_angle[0, :]
-y_coords = training_angle[1, :]
+plt.subplot(2, 1, 1)
+plt.pcolor(z_true, edgecolors = 'k', linewidths = 0, cmap = 'Blues')
+plt.title('True 0-Laplacian eigenvector z_true values')
 
-z_true = Phis_normalized[:, 14]
-z_dm = np.real(varphi_xyz[:, 14])
+plt.subplot(2, 1, 2)
+plt.pcolor(z_dm, edgecolors = 'k', linewidths = 0, cmap = 'summer')
+plt.title('Diffusion maps approximated 0-Laplacian eigenfunction z_dm values')
 
-
-# Plot 3D surface of true 0-Laplacian eigenvectors z_true
-# against theta and rho with colors corresponding to the values of z_true
-fig = plt.figure(figsize = (10,10))
-
-ax1 = fig.add_subplot(121, projection='3d')
-ax1.scatter3D(x_coords, y_coords, z_true, color = "blue")
-
-ax2 = fig.add_subplot(122, projection='3d')
-ax2.scatter3D(x_coords, y_coords, z_dm, color = "red")
-
-plt.title("3D scatter plot of diffusion maps approximation")
- 
-plt.show()
-
-
-# Plot 3D surface of diffusion maps approximated 0-Laplacian eigenfunctions z_dm
-# against theta and rho with colors corresponding to the values of z_dm
-fig = plt.figure(figsize = (10,10))
-
-ax1 = fig.add_subplot(121, projection='3d')
-ax1.scatter3D(x_coords, y_coords, z_dm, color = "blue")
-
-ax2 = fig.add_subplot(122, projection='3d')
-ax2.scatter3D(x_coords, y_coords, z_dm, color = "red")
-
-plt.title("3D scatter plot of diffusion maps approximation")
- 
 plt.show()
 # %%
 

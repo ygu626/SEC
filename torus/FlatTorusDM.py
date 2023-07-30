@@ -479,7 +479,7 @@ to obtain v_hat'
 
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
 def monte_carlo_product(Phis, training_angle, N = 100):
-    v_an = v1F1(training_angle[0, :], training_angle[1, :])
+    v_an = v1F2(training_angle[0, :], training_angle[1, :])
     integral = (1/(N**2))*np.sum(Phis*v_an, axis = 1)
     
     return integral
@@ -501,7 +501,7 @@ b_am = np.array(b_am).T
 # Apply analysis operator T to obtain v_hat_prime
 # using pushforward vF of vector field v 
 # and Monte Carlo integration with weights
-gamma_km = np.einsum('ak, am -> km', F1_ak, b_am, dtype = float)
+gamma_km = np.einsum('ak, am -> km', F2_ak, b_am, dtype = float)
 
 
 g = g[:(2*K+1), :, :]
@@ -543,7 +543,7 @@ for j in range(0, 2*K+1):
     g_weighted[j, :, :] = np.exp(-tau*lambs[j])*g[j, :, :]
 
 
-h_ajl = np.einsum('ak, jkl -> ajl', F1_ak, g_weighted, dtype = float)
+h_ajl = np.einsum('ak, jkl -> ajl', F2_ak, g_weighted, dtype = float)
 
 
 # c = c[:(2*J+1), :, :]
@@ -586,13 +586,13 @@ def W_theta2(varphi_xyzw):
     return W_theta_x2, W_theta_y2, W_theta_z2
 
 
-W_x1, W_y1 = W_theta1(varphi_xyzw)
-# W_x2, W_y2, W_z2 = W_theta2(varphi_xyzw)
+# W_x1, W_y1 = W_theta1(varphi_xyzw)
+W_x2, W_y2, W_z2 = W_theta2(varphi_xyzw)
 
 
 for i in range(0, int(N**2)):
-    vector_approx1[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], TRAIN_W[i], W_x1[i], W_y1[i]])
-    # vector_approx2[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], TRAIN_W[i], W_x2[i], W_y2[i], W_z2[i]])
+    # vector_approx1[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], TRAIN_W[i], W_x1[i], W_y1[i]])
+    vector_approx2[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], TRAIN_W[i], W_x2[i], W_y2[i], W_z2[i]])
 
 print(vector_approx1[:3, :])
 # %%
@@ -625,6 +625,8 @@ plt.show()
 
 
 # %%
+# Plot for the 3D pushforward
+
 def plot_torus(precision, a = 4, b = 1):
     U_t = np.linspace(0, 2*np.pi, precision)
     V_t = np.linspace(0, 2*np.pi, precision)
@@ -636,7 +638,7 @@ def plot_torus(precision, a = 4, b = 1):
     Z_t = b*np.sin(U_t)
     
     random_num = 200    # for 500 random indices
-    random_index = np.random.choice(vector_approx.shape[0], random_num, replace = False)  
+    random_index = np.random.choice(vector_approx2.shape[0], random_num, replace = False)  
 
     
     return X_t, Y_t, Z_t, random_index
@@ -644,30 +646,30 @@ def plot_torus(precision, a = 4, b = 1):
     
 x_t, y_t, z_t, rd_idx = plot_torus(100, 4, 1)
 
-# ax = plt.axes(projection = '3d')
+ax = plt.axes(projection = '3d')
 
-# ax.set_xlim(-5,5)
-# ax.set_ylim(-5,5)
-# ax.set_zlim(-5,5)
+ax.set_xlim(-5,5)
+ax.set_ylim(-5,5)
+ax.set_zlim(-5,5)
 
-# ax.plot_surface(x_t, y_t, z_t, antialiased = True, color='orange')
-
-
-vector_approx_shuffled = vector_approx1[rd_idx]
+ax.plot_surface(x_t, y_t, z_t, antialiased = True, color='orange')
 
 
-x1 = vector_approx_shuffled[:, 0]
-y1 = vector_approx_shuffled[:, 1]
-z1 = vector_approx_shuffled[:, 2]
-w1 = vector_approx_shuffled[:, 3]
+vector_approx_shuffled = vector_approx2[rd_idx]
+
+
+x2 = vector_approx_shuffled[:, 0]
+y2 = vector_approx_shuffled[:, 1]
+z2 = vector_approx_shuffled[:, 2]
+w2 = vector_approx_shuffled[:, 3]
    
    
-a1 = vector_approx_shuffled[:, 4]
-b1 = vector_approx_shuffled[:, 5]
+a2 = vector_approx_shuffled[:, 4]
+b2 = vector_approx_shuffled[:, 5]
+c2 = vector_approx_shuffled[:, 6]
 
 
-plt.scatter(a1, b1)    
-# ax.quiver(x1, y1, z1, w1, a1, b1, length = 0.1, color = 'blue')
+ax.quiver(x2, y2, z2, a2, b2, c2, length = 3, color = 'blue')
     
 plt.show()
 # %%

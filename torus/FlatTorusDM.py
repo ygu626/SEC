@@ -362,3 +362,312 @@ plt.title('Diffusion maps approximated 0-Laplacian eigenfunction z_dm values')
 
 plt.show()
 # %%
+
+
+
+# %%
+"""
+SEC approximation
+for pushforward of vector fields on the 2-torus embedded in R3
+"""
+
+
+# Fourier coefficients F_ak pf F w.r.t. difusion maps approximated eigenvectors Phi_j
+# using pushforward into the square and R3
+F1 = lambda theta, rho: np.array([(1/2)*theta**2, (1/2)*rho**2])
+F2 = lambda theta, rho: np.array([(a + b*np.cos(theta))*np.cos(rho), (a + b*np.cos(theta))*np.sin(rho), a + b*np.sin(theta)])
+
+v1F1 = lambda theta, rho: np.array([theta, rho])
+v1F2 = lambda theta, rho: np.array([-b*np.sin(theta)*np.cos(rho) - (a + b*np.cos(theta))*np.sin(rho), -b*np.sin(theta)*np.sin(rho) + (a + b*np.cos(theta))*np.cos(rho), b*np.cos(theta)])
+
+
+F1_ak = (1/(N**2))*np.matmul(F1(training_angle[0, :], training_angle[1, :]), Phis_normalized)
+F2_ak = (1/(N**2))*np.matmul(F2(training_angle[0, :], training_angle[1, :]), Phis_normalized)
+# %%
+
+
+# %%
+# Compute c_ijp coefficients
+# using Monte Carlo integration
+pool = mp.Pool()
+
+def c_func(i, j, p):
+    return (1/(N**2))*np.sum(Phis_normalized[:, i]*Phis_normalized[:, j]*Phis_normalized[:, p])
+
+c = pool.starmap(c_func, 
+              [(i, j, p) for i in range(0, 2 * I + 1)
+                for j in range(0, 2 * I + 1)
+                for p in range(0, 2 * I + 1)])
+            
+c = np.reshape(np.array(c), (2 * I + 1, 2 * I + 1, 2 * I + 1))
+# print(c[:2,:2,:2])
+
+
+# Compute g_ijp Riemannian metric coefficients
+# using Monte Carlo integration
+g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+g_coeff = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+
+for i in range(0, 2*I+1):
+            for j in range(0, 2*I+1):
+                        for p in range(0, 2*I+1):
+                                    g_coeff[i,j,p] = (lambs[i] + lambs[j] - lambs[p])/2
+
+g = np.multiply(g_coeff, c)
+
+
+# g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
+# for i in range(0, 2*I+1):
+#             for j in range(0, 2*I+1):
+#                         for p in range(0, 2*I+1):
+#                                     g[i,j,p] = (lambs[i] + lambs[j] - lambs[p])*c[i,j,p]/2
+         
+# print(g[:,:2,:2])
+# %%
+
+
+
+# %%
+# Compute G_ijpq entries for the Gram operator and its dual
+# using Monte Carlo integration
+G = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
+G = np.einsum('ipm, jqm -> ijpq', c, g, dtype = float)
+
+G = G[:(2*J+1), :(2*K+1), :(2*J+1), :(2*K+1)]
+G = np.reshape(G, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
+
+# print(G[:2,:2])
+
+
+# Perform singular value decomposition (SVD) of the Gram operator G
+# and plot these singular values
+u2, s2, vh = np.linalg.svd(G, full_matrices = True, compute_uv = True, hermitian = False)
+
+
+sing_lst = np.arange(0, len(s2), 1, dtype = int)
+plt.figure(figsize=(24, 6))
+plt.scatter(sing_lst, s2, color = 'red')
+
+plt.xticks(np.arange(0, ((2*J+1)*(2*K+1))+0.1, 1))
+plt.xlabel('Indices')
+plt.yticks(np.arange(0, max(s2)+0.1, 1))
+plt.ylabel('Singular Values')
+plt.title('Singular Values of the Gram Operator G_ijpq (descending order)')
+
+plt.show()
+# %%
+
+
+
+# %%
+# Teuncate singular values of G based based on a small percentage of the largest singular valuecof G
+threshold = 0.01/(np.max(s2))      # Threshold value for truncated SVD
+
+# Compute duall Gram operator G* using pseudoinverse based on truncated singular values of G
+# G_dual = np.linalg.pinv(G)
+
+G_dual = np.linalg.pinv(G, rcond = threshold)
+# G_dual_mc = np.linalg.pinv(G_mc_weighted)
+
+
+"""
+Applying analysis operator T to the pushforwaed F_*v (instead of the vector field v)
+using Monte Carlo integration
+to obtain v_hat'
+"""
+
+
+# (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
+def monte_carlo_product(Phis, training_angle, N = 100):
+    v_an = v1F1(training_angle[0, :], training_angle[1, :])
+    integral = (1/(N**2))*np.sum(Phis*v_an, axis = 1)
+    
+    return integral
+
+
+# Compute b_am entries using (L2) deterministic Monte Carlo integral
+pool = mp.Pool()
+
+def b_func(m):
+    return monte_carlo_product(Phis_normalized[:, m], training_angle)
+
+
+b_am = pool.map(b_func, 
+                [m for m in range(0, 2 * I + 1)])
+
+b_am = np.array(b_am).T
+
+
+# Apply analysis operator T to obtain v_hat_prime
+# using pushforward vF of vector field v 
+# and Monte Carlo integration with weights
+gamma_km = np.einsum('ak, am -> km', F1_ak, b_am, dtype = float)
+
+
+g = g[:(2*K+1), :, :]
+
+eta_qlm = np.einsum('qkl, km -> qlm', g, gamma_km, dtype = float)
+
+
+c = c[:(2*J+1), :, :]
+
+
+v_hat_prime = np.einsum('qlm, plm -> pq', eta_qlm, c, dtype = float)
+
+for q in range(0, 2*K+1):
+    v_hat_prime[:, q] = np.exp(-tau*lambs[q])*v_hat_prime[:, q]
+
+# v_hat_prime = np.reshape(np.array(v_hat_prime), ((2*J+1), (2*K+1)))
+v_hat_prime = np.reshape(v_hat_prime, ((2*J+1)*(2*K+1)))
+# print(v_hat_prime[:3,:3])
+
+
+# Apply dual Gram operator G* to obtain v_hat 
+# using pushforward vF and original vector field v
+# Both with Monte Carlo integration with weights
+v_hat = np.matmul(G_dual, v_hat_prime)
+v_hat = np.reshape(v_hat, (2*J+1, 2*K+1))
+# %%
+
+
+
+# %%
+# Apply pushforward map F_* of the embedding F to v_hat to obtain approximated vector fields
+# using Monte Carlo integration with weights
+
+# g = g[:(2*K+1), :, :]
+
+# Weighted g_ijp Riemannian metric coefficients
+g_weighted = np.zeros([2*K+1, 2*I+1, 2*I+1], dtype = float)
+for j in range(0, 2*K+1):
+    g_weighted[j, :, :] = np.exp(-tau*lambs[j])*g[j, :, :]
+
+
+h_ajl = np.einsum('ak, jkl -> ajl', F1_ak, g_weighted, dtype = float)
+
+
+# c = c[:(2*J+1), :, :]
+d_jlm = np.einsum('ij, ilm -> jlm', v_hat, c, dtype = float)
+
+p_am = np.einsum('ajl, jlm -> am', h_ajl, d_jlm, dtype = float)
+# %%
+
+
+# %%
+W_theta_x1 = np.zeros(int(N**2), dtype = float)
+W_theta_y1 = np.zeros(int(N**2), dtype = float)
+
+W_theta_x2 = np.zeros(int(N**2), dtype = float)
+W_theta_y2 = np.zeros(int(N**2), dtype = float)
+W_theta_z2 = np.zeros(int(N**2), dtype = float)
+
+vector_approx1 = np.empty([int(N**2), 6], dtype = float)
+vector_approx2 = np.empty([int(N**2), 7], dtype = float)
+
+
+def W_theta1(varphi_xyzw):
+    varphi_xyzw = np.real(varphi_xyzw)
+    
+    for i in range(0, int(N**2)):
+        W_theta_x1[i] = np.sum(p_am[0, :]*varphi_xyzw[i, :])
+        W_theta_y1[i] = np.sum(p_am[1, :]*varphi_xyzw[i, :])
+
+    return W_theta_x1, W_theta_y1
+
+
+def W_theta2(varphi_xyzw):
+    varphi_xyzw = np.real(varphi_xyzw)
+    
+    for i in range(0, int(N**2)):
+        W_theta_x2[i] = np.sum(p_am[0, :]*varphi_xyzw[i, :])
+        W_theta_y2[i] = np.sum(p_am[1, :]*varphi_xyzw[i, :])
+        W_theta_z2[i] = np.sum(p_am[2, :]*varphi_xyzw[i, :])
+
+    return W_theta_x2, W_theta_y2, W_theta_z2
+
+
+W_x1, W_y1 = W_theta1(varphi_xyzw)
+# W_x2, W_y2, W_z2 = W_theta2(varphi_xyzw)
+
+
+for i in range(0, int(N**2)):
+    vector_approx1[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], TRAIN_W[i], W_x1[i], W_y1[i]])
+    # vector_approx2[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], TRAIN_W[i], W_x2[i], W_y2[i], W_z2[i]])
+
+print(vector_approx1[:3, :])
+# %%
+
+
+# %%
+# pcolor plot for the 2D pushforward
+random_num = 1000    # for 500 random indices
+random_index = np.random.choice(vector_approx1.shape[0], random_num, replace = False)  
+
+vector_approx_shuffled = vector_approx1[random_index]
+
+
+a =  vector_approx_shuffled[:, 4]
+b =  vector_approx_shuffled[:, 5]
+a, b = np.meshgrid(a, b)
+
+vector_grid = np.vstack([a.ravel(), b.ravel()])
+
+
+fig = plt.figure(figsize=(12, 12))
+
+plt.pcolor(vector_grid, edgecolors = 'k', linewidths = 0, cmap = 'summer')
+plt.title('SEC Approximated Vector Field with 2D Pushforward')
+
+plt.show()
+# %%
+
+
+
+
+# %%
+def plot_torus(precision, a = 4, b = 1):
+    U_t = np.linspace(0, 2*np.pi, precision)
+    V_t = np.linspace(0, 2*np.pi, precision)
+    
+    U_t, V_t = np.meshgrid(U_t, V_t)
+    
+    X_t = (a + b*np.cos(U_t))*np.cos(V_t)
+    Y_t = (a + b*np.cos(U_t))*np.sin(V_t)
+    Z_t = b*np.sin(U_t)
+    
+    random_num = 200    # for 500 random indices
+    random_index = np.random.choice(vector_approx.shape[0], random_num, replace = False)  
+
+    
+    return X_t, Y_t, Z_t, random_index
+
+    
+x_t, y_t, z_t, rd_idx = plot_torus(100, 4, 1)
+
+# ax = plt.axes(projection = '3d')
+
+# ax.set_xlim(-5,5)
+# ax.set_ylim(-5,5)
+# ax.set_zlim(-5,5)
+
+# ax.plot_surface(x_t, y_t, z_t, antialiased = True, color='orange')
+
+
+vector_approx_shuffled = vector_approx1[rd_idx]
+
+
+x1 = vector_approx_shuffled[:, 0]
+y1 = vector_approx_shuffled[:, 1]
+z1 = vector_approx_shuffled[:, 2]
+w1 = vector_approx_shuffled[:, 3]
+   
+   
+a1 = vector_approx_shuffled[:, 4]
+b1 = vector_approx_shuffled[:, 5]
+
+
+plt.scatter(a1, b1)    
+# ax.quiver(x1, y1, z1, w1, a1, b1, length = 0.1, color = 'blue')
+    
+plt.show()
+# %%

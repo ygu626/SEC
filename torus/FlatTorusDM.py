@@ -12,6 +12,7 @@ and determinstically sampled Monte Carlo points on the circle
 # %%
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 from numpy import random
@@ -646,13 +647,13 @@ def plot_torus(precision, a = 4, b = 1):
     
 x_t, y_t, z_t, rd_idx = plot_torus(100, 4, 1)
 
-ax = plt.axes(projection = '3d')
+# ax = plt.axes(projection = '3d')
 
-ax.set_xlim(-5,5)
-ax.set_ylim(-5,5)
-ax.set_zlim(-5,5)
+# ax.set_xlim(-5,5)
+# ax.set_ylim(-5,5)
+# ax.set_zlim(-5,5)
 
-ax.plot_surface(x_t, y_t, z_t, antialiased = True, color='orange')
+# ax.plot_surface(x_t, y_t, z_t, antialiased = True, color='orange')
 
 
 vector_approx_shuffled = vector_approx2[rd_idx]
@@ -664,12 +665,19 @@ z2 = vector_approx_shuffled[:, 2]
 w2 = vector_approx_shuffled[:, 3]
    
    
-a2 = vector_approx_shuffled[:, 4]
-b2 = vector_approx_shuffled[:, 5]
-c2 = vector_approx_shuffled[:, 6]
+a2 = vector_approx2[:, 4]
+b2 = vector_approx2[:, 5]
+c2 = vector_approx2[:, 6]
 
 
-ax.quiver(x2, y2, z2, a2, b2, c2, length = 3, color = 'blue')
-    
+# ax.quiver(x2, y2, z2, a2, b2, c2, length = 3, color = 'blue')
+
+
+fig = plt.figure(figsize = (10, 7))
+ax = plt.axes(projection ="3d")
+ 
+ax.scatter3D(a2, b2, c2, color = "blue")
+plt.title("3D Scatter Plot of SEC Approximated Vector Fidls Coordinates")
+ 
 plt.show()
 # %%

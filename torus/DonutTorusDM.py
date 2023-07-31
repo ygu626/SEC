@@ -29,7 +29,7 @@ K = 5           # Index for gradients of eigenfunctions
 n = 100          # Number of approximated tangent vectors
 N = 100         # Number of Monte Carlo training data points 
 
-epsilon = 0.25  # RBF bandwidth parameter
+epsilon = 0.2  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
 a = 4           # Radius of the latitude circle of the torus
@@ -252,7 +252,7 @@ S = s(training_data, training_data)
 
 # %%
 # Solve eigenvalue problem for similarity matrix S
-eigenvalues, eigenvectors = eigs(S, k = 150) 
+eigenvalues, eigenvectors = eigs(S, k = 200) 
 index = eigenvalues.argsort()[::-1][:2*I+1]
 Lambs = eigenvalues[index]
 Phis = np.real(eigenvectors[:, index])
@@ -302,8 +302,8 @@ for eigenvalues and eigenfunctions of 0-Laplacian
 x_coords = THETA_LST
 y_coords = RHO_LST
 
-z_true = np.reshape(Phis_normalized[:, 3], (N, N))
-z_dm = np.reshape(np.real(varphi_xyz[:, 3]), (N, N))
+z_true = np.reshape(Phis_normalized[:, 35], (N, N))
+z_dm = np.reshape(np.real(varphi_xyz[:, 35]), (N, N))
 
 
 # 3D surface plots of true and diffusion maps approximated 0-Laplacian eigenvectors z_true and z_dm
@@ -437,7 +437,7 @@ plt.show()
 
 # %%
 # Teuncate singular values of G based based on a small percentage of the largest singular valuecof G
-threshold = 0.1/(np.max(s2))      # Threshold value for truncated SVD
+threshold = 0.001/(np.max(s2))      # Threshold value for truncated SVD
 
 # Compute duall Gram operator G* using pseudoinverse based on truncated singular values of G
 # G_dual = np.linalg.pinv(G)
@@ -562,7 +562,7 @@ def plot_torus(precision, a = 4, b = 1):
     Y_t = (a + b*np.cos(U_t))*np.sin(V_t)
     Z_t = b*np.sin(U_t)
     
-    random_num = 200    # for 500 random indices
+    random_num = 1900    # for 500 random indices
     random_index = np.random.choice(vector_approx.shape[0], random_num, replace = False)  
 
     

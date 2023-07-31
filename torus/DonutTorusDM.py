@@ -3,7 +3,7 @@ Spectral Exterior Calculus (SEC)
 2-torus T2 Example (Roration)
 Approximations of vector fields on the 2-torus
 usng donut embedding into R^3
-Given pushforward of tangent vectors on the circle
+Given pushforward of tangent vectors on the 2-torus
 and determinstically sampled Monte Carlo points on the circle
 """
 

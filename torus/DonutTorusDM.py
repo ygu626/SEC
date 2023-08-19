@@ -310,66 +310,6 @@ plt.show()
 
 
 
-
-# %%
-"""
-Check accuracy of diffusion maps approximation
-for eigenvalues and eigenfunctions of 0-Laplacian
-"""
-
-x_coords = THETA_LST
-y_coords = RHO_LST
-
-z_true = np.reshape(Phis_normalized[:, 35], (N, N))
-z_dm = np.reshape(np.real(varphi_xyz[:, 35]), (N, N))
-
-
-# 3D surface plots of true and diffusion maps approximated 0-Laplacian eigenvectors z_true and z_dm
-# against theta and rho with colors corresponding to the values of z_true and z_dm
-fig = plt.figure()
-
-ax = fig.gca(projection = Axes3D.name)
-ax.plot_wireframe(x_coords, y_coords, z_true)
-# ax.plot_wireframe(x_coords, y_coords, z_dm)
-
-
-cmap = plt.cm.plasma
-norm = matplotlib.colors.Normalize(vmin = np.min(z_true), vmax = np.max(z_true))
-# norm = matplotlib.colors.Normalize(vmin = np.min(z_dm), vmax = np.max(z_dm))
-
-colors = cmap(norm(z_true))
-# colors = cmap(norm(z_dm))
-
-ax.plot_surface(x_coords, y_coords, np.zeros_like(x_coords), cstride = 1, rstride = 1, facecolors = colors, shade = False)
-
-sc = matplotlib.cm.ScalarMappable(cmap = cmap, norm = norm)
-sc.set_array([])
-plt.colorbar(sc)
-
-plt.title('0-Laplacian eigenvectors against theta and rho')
-
-plt.show()
-# %%
-
-# %%
-# pcolor plots of true and diffusion maps approximated 0-Laplacian 
-# eigenvectors and eigenfunctions z_true and z_dm values
-
-fig = plt.figure(figsize=(8, 16))
-
-plt.subplot(2, 1, 1)
-plt.pcolor(z_true, edgecolors = 'k', linewidths = 0, cmap = 'Blues')
-plt.title('True 0-Laplacian eigenvector z_true values')
-
-plt.subplot(2, 1, 2)
-plt.pcolor(z_dm, edgecolors = 'k', linewidths = 0, cmap = 'summer')
-plt.title('Diffusion maps approximated 0-Laplacian eigenfunction z_dm values')
-
-plt.show()
-# %%
-
-
-
 # %%
 """
 SEC approximation

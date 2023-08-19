@@ -41,13 +41,13 @@ and Embedding map F with pushforward vF
 
 # Deterministically sampled Monte Carlo training data points
 def monte_carlo_points(a = 0, b = 2*np.pi, N = 800):
-    u = np.zeros(N)
-    subsets = np.arange(0, N+1, N/400)
-    for i in range(0, 400):
-        start = int(subsets[i])
-        end = int(subsets[i+1])
-        u[start:end] = random.uniform(low = (i/400)*b, high = ((i+1)/400)*b, size = end - start)
-    random.shuffle(u)
+    u = np.arange(a, b, 2*np.pi/N)
+    #csubsets = np.arange(0, N+1, N/400)
+    # for i in range(0, 400):
+    #    start = int(subsets[i])
+    #    end = int(subsets[i+1])
+    #    u[start:end] = random.uniform(low = (i/400)*b, high = ((i+1)/400)*b, size = end - start)
+    # random.shuffle(u)
     
     training_data = np.empty([2, N], dtype = float)
     for j in range(0, N):
@@ -246,76 +246,101 @@ varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
 # %%
 
 # %%
-# Scatter plots of the continupus extensions varphi_j for certain j's
+# pcolormesh plots of the continupus extensions varphi_j for certain j's
 
-angle_new = np.linspace(-20*np.pi, 20*np.pi, 10000)
-coords_new = np.array([np.cos(angle_new), np.sin(angle_new)])
-varphi_xy_new = varphi(coords_new)
+x_new = np.linspace(-10, 10, 100)
+y_new = np.linspace(-10, 10, 100)
+
+X_new, Y_new = np.meshgrid(x_new, y_new)
+xy_stack = np.vstack([X_new.ravel(), Y_new.ravel()])
+
+
+varphi_xy_new1 = np.reshape(np.real(varphi(xy_stack)[:, 0]), (100, 100))
+varphi_xy_new2 = np.reshape(np.real(varphi(xy_stack)[:, 1]), (100, 100))
+varphi_xy_new3 = np.reshape(np.real(varphi(xy_stack)[:, 2]), (100, 100))
+varphi_xy_new4 = np.reshape(np.real(varphi(xy_stack)[:, 3]), (100, 100))
+varphi_xy_new5 = np.reshape(np.real(varphi(xy_stack)[:, 4]), (100, 100))
+varphi_xy_new6 = np.reshape(np.real(varphi(xy_stack)[:, 5]), (100, 100))
+varphi_xy_new7 = np.reshape(np.real(varphi(xy_stack)[:, 6]), (100, 100))
+varphi_xy_new8 = np.reshape(np.real(varphi(xy_stack)[:, 7]), (100, 100))
+varphi_xy_new9 = np.reshape(np.real(varphi(xy_stack)[:, 8]), (100, 100))
+varphi_xy_new10 = np.reshape(np.real(varphi(xy_stack)[:, 9]), (100, 100))
 
 
 sidefig, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9, ax10) = plt.subplots(10, 1, figsize=(6, 50))
-sidefig.suptitle('Scatter PLOts of varphi_j for j = 0, ..., 9')
+sidefig.suptitle('pcolormesh PLOts of varphi_j for j = 0, ..., 9')
 
-ax1.scatter(x = angle_new, y = varphi_xy_new[:, 0], color='red')
-ax1.set_xlim([-65, 65])
-ax1.set_xlim([-2, 2])
-ax1.set_xlabel("Angle theta")
-ax1.set_ylabel("Varphi_0(theta)")
+ax1.pcolormesh(X_new, Y_new, varphi_xy_new1)
+ax1.set_xlim([-10, 10])
+ax1.set_ylim([-10, 10])
+ax1.set_xlabel("x = cos(theta)")
+ax1.set_ylabel("y = sin(theta)")
+ax1.set_title("Heatmap of varphi_0")
 
-ax2.scatter(x = angle_new, y = varphi_xy_new[:, 1], color='green')
-ax2.set_xlim([-65, 65])
-ax2.set_xlim([-2, 2])
-ax2.set_xlabel("Angle theta")
-ax2.set_ylabel("Varphi_1(theta)")
-
-ax3.scatter(x = angle_new, y = varphi_xy_new[:, 2], color='orange')
-ax3.set_xlim([-65, 65])
-ax3.set_xlim([-2, 2])
-ax3.set_xlabel("Angle theta")
-ax3.set_ylabel("Varphi_2(theta)")
-
-ax4.scatter(x = angle_new, y = varphi_xy_new[:, 3], color='blue')
-ax4.set_xlim([-65, 65])
-ax4.set_xlim([-2, 2])
-ax4.set_xlabel("Angle theta")
-ax4.set_ylabel("Varphi_3(theta)")
-
-ax5.scatter(x = angle_new, y = varphi_xy_new[:, 4], color='purple')
-ax5.set_xlim([-65, 65])
-ax5.set_xlim([-2, 2])
-ax5.set_xlabel("Angle theta")
-ax5.set_ylabel("Varphi_4(theta)")
-
-ax6.scatter(x = angle_new, y = varphi_xy_new[:, 5], color='yellow')
-ax6.set_xlim([-65, 65])
-ax6.set_xlim([-2, 2])
-ax6.set_xlabel("Angle theta")
-ax6.set_ylabel("Varphi_5(theta)")
-
-ax7.scatter(x = angle_new, y = varphi_xy_new[:, 6], color='brown')
-ax7.set_xlim([-65, 65])
-ax7.set_xlim([-2, 2])
-ax7.set_xlabel("Angle theta")
-ax7.set_ylabel("Varphi_6(theta)")
-
-ax8.scatter(x = angle_new, y = varphi_xy_new[:, 7], color='cyan')
-ax8.set_xlim([-65, 65])
-ax8.set_xlim([-2, 2])
-ax8.set_xlabel("Angle theta")
-ax8.set_ylabel("Varphi_7(theta)")
-
-ax9.scatter(x = angle_new, y = varphi_xy_new[:, 8], color='black')
-ax9.set_xlim([-65, 65])
-ax9.set_xlim([-2, 2])
-ax9.set_xlabel("Angle theta")
-ax9.set_ylabel("Varphi_8(theta)")
+ax2.pcolormesh(X_new, Y_new, varphi_xy_new2)
+ax2.set_xlim([-10, 10])
+ax2.set_ylim([-10, 10])
+ax2.set_xlabel("x = cos(theta)")
+ax2.set_ylabel("y = sin(theta)")
+ax2.set_title("Heatmap of varphi_1")
 
 
-ax10.scatter(x = angle_new, y = varphi_xy_new[:, 9], color='magenta')
-ax10.set_xlim([-65, 65])
-ax10.set_xlim([-2, 2])
-ax10.set_xlabel("Angle theta")
-ax10.set_ylabel("Varphi_9(theta)")
+ax3.pcolormesh(X_new, Y_new, varphi_xy_new3)
+ax3.set_xlim([-10, 10])
+ax3.set_ylim([-10, 10])
+ax3.set_xlabel("x = cos(theta)")
+ax3.set_ylabel("y = sin(theta)")
+ax3.set_title("Heatmap of varphi_2")
+
+ax4.pcolormesh(X_new, Y_new, varphi_xy_new4)
+ax4.set_xlim([-10, 10])
+ax4.set_ylim([-10, 10])
+ax4.set_xlabel("x = cos(theta)")
+ax4.set_ylabel("y = sin(theta)")
+ax4.set_title("Heatmap of varphi_3")
+
+ax5.pcolormesh(X_new, Y_new, varphi_xy_new5)
+ax5.set_xlim([-10, 10])
+ax5.set_ylim([-10, 10])
+ax5.set_xlabel("x = cos(theta)")
+ax5.set_ylabel("y = sin(theta)")
+ax5.set_title("Heatmap of varphi_4")
+
+ax6.pcolormesh(X_new, Y_new, varphi_xy_new6)
+ax6.set_xlim([-10, 10])
+ax6.set_ylim([-10, 10])
+ax6.set_xlabel("x = cos(theta)")
+ax6.set_ylabel("y = sin(theta)")
+ax6.set_title("Heatmap of varphi_5")
+
+ax7.pcolormesh(X_new, Y_new, varphi_xy_new7)
+ax7.set_xlim([-10, 10])
+ax7.set_ylim([-10, 10])
+ax7.set_xlabel("x = cos(theta)")
+ax7.set_ylabel("y = sin(theta)")
+ax7.set_title("Heatmap of varphi_6")
+
+ax8.pcolormesh(X_new, Y_new, varphi_xy_new8)
+ax8.set_xlim([-10, 10])
+ax8.set_ylim([-10, 10])
+ax8.set_xlabel("x = cos(theta)")
+ax8.set_ylabel("y = sin(theta)")
+ax8.set_title("Heatmap of varphi_7")
+
+ax9.pcolormesh(X_new, Y_new, varphi_xy_new9)
+ax9.set_xlim([-10, 10])
+ax9.set_ylim([-10, 10])
+ax9.set_xlabel("x = cos(theta)")
+ax9.set_ylabel("y = sin(theta)")
+ax9.set_title("Heatmap of varphi_8")
+
+
+ax10.pcolormesh(X_new, Y_new, varphi_xy_new10)
+ax10.set_xlim([-10, 10])
+ax10.set_ylim([-10, 10])
+ax10.set_xlabel("x = cos(theta)")
+ax10.set_ylabel("y = sin(theta)")
+ax10.set_title("Heatmap of varphi_9")
 
 
 plt.show()

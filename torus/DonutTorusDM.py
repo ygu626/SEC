@@ -24,16 +24,16 @@ import multiprocess as mp
 
 # Parameters
 I = 20          # Inner index for eigenfunctions
-J = 5           # Outer index for eigenfunctions
+J = 10           # Outer index for eigenfunctions
 K = 5           # Index for gradients of eigenfunctions
 n = 100          # Number of approximated tangent vectors
 N = 100         # Number of Monte Carlo training data points 
 
-epsilon = 0.2  # RBF bandwidth parameter
+epsilon = 0.7  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
 a = 4           # Radius of the latitude circle of the torus
-b = 1           # Radius of the meridian circle of the torus
+b = 2           # Radius of the meridian circle of the torus
 
 
 """
@@ -46,18 +46,18 @@ and smbedding map F with pushforward F_*v = vF
 # Deterministically sampled Monte Carlo training data points
 # the latotude and meridian circles with radius a and b
 def monte_carlo_points(start_pt = 0, end_pt = 2*np.pi, N = 100):
-    u_a = np.zeros(N)
-    u_b = np.zeros(N)
+    u_a = np.arange(start_pt, end_pt, 2*np.pi/N)
+    u_b = np.arange(start_pt, end_pt, 2*np.pi/N)
     
-    subsets = np.arange(0, N+1, (N/50))
-    for i in range(0, int(N/2)):
-        start = int(subsets[i])
-        end = int(subsets[i+1])
-        u_a[start:end] = random.uniform(low = (i/(N/2))*end_pt, high = ((i+1)/(N/2))*end_pt, size = end - start)
-        u_b[start:end] = random.uniform(low = (i/(N/2))*end_pt, high = ((i+1)/(N/2))*end_pt, size = end - start)
+    # subsets = np.arange(0, N+1, (N/50))
+    # for i in range(0, int(N/2)):
+    #    start = int(subsets[i])
+    #    end = int(subsets[i+1])
+    #    u_a[start:end] = random.uniform(low = (i/(N/2))*end_pt, high = ((i+1)/(N/2))*end_pt, size = end - start)
+    #    u_b[start:end] = random.uniform(low = (i/(N/2))*end_pt, high = ((i+1)/(N/2))*end_pt, size = end - start)
     
-    random.shuffle(u_a)
-    random.shuffle(u_b)
+    # random.shuffle(u_a)
+    # random.shuffle(u_b)
 
     training_data_a = np.empty([2, N], dtype = float)
     training_data_b = np.empty([2, N], dtype = float)
@@ -263,7 +263,7 @@ for i in range(0, 2*I+1):
             lambs[i] = 4*(-np.log(np.real(Lambs[i]))/(epsilon**2))
             # lambs_dm[i] = (1 - np.real(Lambs[i]))/(epsilon**2)   
 
-print(lambs)         
+print(Lambs)         
 
 
 
@@ -291,6 +291,24 @@ varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
 # Apply the coninuous extensiom varphi to the training data set
 varphi_xyz = varphi(training_data)
 # %%
+
+# %%
+"""
+Check accuracy of diffusion maps approximation
+for eigenvalues and eigenfunctions of 0-Laplacian
+"""
+
+
+z_true = np.reshape(Phis_normalized[:, 1], (N, N))
+z_dm = np.reshape(np.real(varphi_xyz[:, 27]), (N, N))
+
+plt.figure(figsize=(12, 12))
+plt.pcolormesh(THETA_LST, RHO_LST, z_dm)
+
+plt.show()
+# %%
+
+
 
 
 # %%
@@ -422,6 +440,7 @@ u2, s2, vh = np.linalg.svd(G, full_matrices = True, compute_uv = True, hermitian
 
 sing_lst = np.arange(0, len(s2), 1, dtype = int)
 plt.figure(figsize=(24, 6))
+
 plt.scatter(sing_lst, s2, color = 'red')
 
 plt.xticks(np.arange(0, ((2*J+1)*(2*K+1))+0.1, 1))
@@ -437,7 +456,7 @@ plt.show()
 
 # %%
 # Teuncate singular values of G based based on a small percentage of the largest singular valuecof G
-threshold = 0.001/(np.max(s2))      # Threshold value for truncated SVD
+threshold = 0.005/(np.max(s2))      # Threshold value for truncated SVD
 
 # Compute duall Gram operator G* using pseudoinverse based on truncated singular values of G
 # G_dual = np.linalg.pinv(G)
@@ -552,7 +571,8 @@ for i in range(0, int(N**2)):
 # print(vector_approx[:3, :])
 
 
-def plot_torus(precision, a = 4, b = 1):
+#%%
+def plot_torus(precision, a = 4, b = 2):
     U_t = np.linspace(0, 2*np.pi, precision)
     V_t = np.linspace(0, 2*np.pi, precision)
     
@@ -562,7 +582,7 @@ def plot_torus(precision, a = 4, b = 1):
     Y_t = (a + b*np.cos(U_t))*np.sin(V_t)
     Z_t = b*np.sin(U_t)
     
-    random_num = 1900    # for 500 random indices
+    random_num = 200    # for 500 random indices
     random_index = np.random.choice(vector_approx.shape[0], random_num, replace = False)  
 
     
@@ -570,7 +590,7 @@ def plot_torus(precision, a = 4, b = 1):
 
     
 
-x_t, y_t, z_t, rd_idx = plot_torus(100, 4, 1)
+x_t, y_t, z_t, rd_idx = plot_torus(100, 4, 2)
 
 ax = plt.axes(projection = '3d')
 
@@ -578,7 +598,7 @@ ax.set_xlim(-5,5)
 ax.set_ylim(-5,5)
 ax.set_zlim(-5,5)
 
-ax.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
+# ax.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
 
 
 vector_approx_shuffled = vector_approx[rd_idx]
@@ -588,9 +608,9 @@ x2 = vector_approx_shuffled[:, 0]
 y2 = vector_approx_shuffled[:, 1]
 z2 = vector_approx_shuffled[:, 2]
    
-a2 = vector_approx_shuffled[:, 3]
-b2 = vector_approx_shuffled[:, 4]
-c2 = vector_approx_shuffled[:, 5]
+a2 = vector_approx_shuffled[:, 3]/4
+b2 = vector_approx_shuffled[:, 4]/4
+c2 = vector_approx_shuffled[:, 5]/4
     
 ax.quiver(x2, y2, z2, a2, b2, c2, length = 0.1, color = 'blue')
     

@@ -603,6 +603,20 @@ ax2.set_title('Y-coordinates w.r.t. Angle Theta (true = black, SEC = red)')
 plt.show()
 # %%
 
+# %%
+vec_ana = v1F(THETA_LST)
+vec_sec = vector_approx[:, 2:4].T
+
+rss = np.sum(np.power((vec_ana - vec_sec), 2))
+
+vec_bar = np.mean(vec_ana, axis = 1)
+tss = np.sum(np.power(vec_ana, 2))
+
+R_squared = 1 - rss/tss
+print(R_squared)
+print(tss)
+# %%
+
 
 
 """

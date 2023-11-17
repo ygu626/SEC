@@ -23,7 +23,7 @@ I = 20          # Inner index for eigenfunctions
 J = 5           # Outer index for eigenfunctions
 K = 5           # Index for gradients of eigenfunctions
 n = 8          # Number of approximated tangent vectors
-N = 800         # Number of Monte Carlo training data points 
+N = 300         # Number of Monte Carlo training data points 
 
 epsilon = 0.25  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
@@ -40,14 +40,14 @@ and Embedding map F with pushforward vF
 
 
 # Deterministically sampled Monte Carlo training data points
-def monte_carlo_points(a = 0, b = 2*np.pi, N = 800):
-    u = np.arange(a, b, 2*np.pi/N)
-    #csubsets = np.arange(0, N+1, N/400)
-    # for i in range(0, 400):
-    #    start = int(subsets[i])
-    #    end = int(subsets[i+1])
-    #    u[start:end] = random.uniform(low = (i/400)*b, high = ((i+1)/400)*b, size = end - start)
-    # random.shuffle(u)
+def monte_carlo_points(a = 0, b = 2*np.pi, N = 300):
+    u = np.zeros(N)
+    subsets = np.arange(0, N+1, N/400)
+    for i in range(0, 400):
+        start = int(subsets[i])
+        end = int(subsets[i+1])
+        u[start:end] = random.uniform(low = (i/400)*b, high = ((i+1)/400)*b, size = end - start)
+    random.shuffle(u)
     
     training_data = np.empty([2, N], dtype = float)
     for j in range(0, N):
@@ -230,6 +230,15 @@ Phis_normalized = np.empty([N, 2*I+1], dtype = float)
 for j in range(0, 2*I+1):
     Phis_normalized[:, j] = np.real(Phis[:, j])*np.sqrt(N)
 
+print(Phis_normalized[:, 0])
+# %%
+
+# %%
+print(np.matmul(S, Phis[:, 0]))
+
+# %%
+
+
 # Appeoximate eigenvalues and eigenfunctions for the 0-Laplacian
 def make_varphi(k, x_train, lambs, phis):
     phi_lamb = phis / lambs
@@ -246,8 +255,16 @@ varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
 # %%
 
 # %%
+print(np.dot(Phis_normalized[:, 5], Phis_normalized[:, 2]))
+
+# %%
+
+# %%
 # pcolormesh plots of the continupus extensions varphi_j for certain j's
 
+angle_new = np.linspace(-20*np.pi, 20*np.pi, 10000)
+coords_new = np.array([np.cos(angle_new), np.sin(angle_new)])
+varphi_xy_new = varphi(coords_new)
 x_new = np.linspace(-10, 10, 100)
 y_new = np.linspace(-10, 10, 100)
 
@@ -268,6 +285,68 @@ varphi_xy_new10 = np.reshape(np.real(varphi(xy_stack)[:, 9]), (100, 100))
 
 
 sidefig, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9, ax10) = plt.subplots(10, 1, figsize=(6, 50))
+sidefig.suptitle('Scatter PLOts of varphi_j for j = 0, ..., 9')
+
+ax1.scatter(x = angle_new, y = varphi_xy_new[:, 0], color='red')
+ax1.set_xlim([-65, 65])
+ax1.set_xlim([-2, 2])
+ax1.set_xlabel("Angle theta")
+ax1.set_ylabel("Varphi_0(theta)")
+
+ax2.scatter(x = angle_new, y = varphi_xy_new[:, 1], color='green')
+ax2.set_xlim([-65, 65])
+ax2.set_xlim([-2, 2])
+ax2.set_xlabel("Angle theta")
+ax2.set_ylabel("Varphi_1(theta)")
+
+ax3.scatter(x = angle_new, y = varphi_xy_new[:, 2], color='orange')
+ax3.set_xlim([-65, 65])
+ax3.set_xlim([-2, 2])
+ax3.set_xlabel("Angle theta")
+ax3.set_ylabel("Varphi_2(theta)")
+
+ax4.scatter(x = angle_new, y = varphi_xy_new[:, 3], color='blue')
+ax4.set_xlim([-65, 65])
+ax4.set_xlim([-2, 2])
+ax4.set_xlabel("Angle theta")
+ax4.set_ylabel("Varphi_3(theta)")
+
+ax5.scatter(x = angle_new, y = varphi_xy_new[:, 4], color='purple')
+ax5.set_xlim([-65, 65])
+ax5.set_xlim([-2, 2])
+ax5.set_xlabel("Angle theta")
+ax5.set_ylabel("Varphi_4(theta)")
+
+ax6.scatter(x = angle_new, y = varphi_xy_new[:, 5], color='yellow')
+ax6.set_xlim([-65, 65])
+ax6.set_xlim([-2, 2])
+ax6.set_xlabel("Angle theta")
+ax6.set_ylabel("Varphi_5(theta)")
+
+ax7.scatter(x = angle_new, y = varphi_xy_new[:, 6], color='brown')
+ax7.set_xlim([-65, 65])
+ax7.set_xlim([-2, 2])
+ax7.set_xlabel("Angle theta")
+ax7.set_ylabel("Varphi_6(theta)")
+
+ax8.scatter(x = angle_new, y = varphi_xy_new[:, 7], color='cyan')
+ax8.set_xlim([-65, 65])
+ax8.set_xlim([-2, 2])
+ax8.set_xlabel("Angle theta")
+ax8.set_ylabel("Varphi_7(theta)")
+
+ax9.scatter(x = angle_new, y = varphi_xy_new[:, 8], color='black')
+ax9.set_xlim([-65, 65])
+ax9.set_xlim([-2, 2])
+ax9.set_xlabel("Angle theta")
+ax9.set_ylabel("Varphi_8(theta)")
+
+
+ax10.scatter(x = angle_new, y = varphi_xy_new[:, 9], color='magenta')
+ax10.set_xlim([-65, 65])
+ax10.set_xlim([-2, 2])
+ax10.set_xlabel("Angle theta")
+ax10.set_ylabel("Varphi_9(theta)")
 sidefig.suptitle('pcolormesh PLOts of varphi_j for j = 0, ..., 9')
 
 ax1.pcolormesh(X_new, Y_new, varphi_xy_new1)
@@ -344,6 +423,84 @@ ax10.set_title("Heatmap of varphi_9")
 
 
 plt.show()
+# %%
+
+
+
+# %%
+# Scatter plots of the continupus extensions varphi_j for certain j's
+
+angle_new = np.linspace(-20*np.pi, 20*np.pi, 10000)
+coords_new = np.array([np.cos(angle_new), np.sin(angle_new)])
+varphi_xy_new = varphi(coords_new)
+
+
+sidefig2, (ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8, ax9, ax10) = plt.subplots(10, 1, figsize=(6, 50))
+sidefig2.suptitle('Scatter PLOts of varphi_j for j = 0, ..., 9')
+
+ax1.scatter(x = angle_new, y = varphi_xy_new[:, 0], color='red')
+ax1.set_xlim([-65, 65])
+ax1.set_xlim([-2, 2])
+ax1.set_xlabel("Angle theta")
+ax1.set_ylabel("Varphi_0(theta)")
+
+ax2.scatter(x = angle_new, y = varphi_xy_new[:, 1], color='green')
+ax2.set_xlim([-65, 65])
+ax2.set_xlim([-2, 2])
+ax2.set_xlabel("Angle theta")
+ax2.set_ylabel("Varphi_1(theta)")
+
+ax3.scatter(x = angle_new, y = varphi_xy_new[:, 2], color='orange')
+ax3.set_xlim([-65, 65])
+ax3.set_xlim([-2, 2])
+ax3.set_xlabel("Angle theta")
+ax3.set_ylabel("Varphi_2(theta)")
+
+ax4.scatter(x = angle_new, y = varphi_xy_new[:, 3], color='blue')
+ax4.set_xlim([-65, 65])
+ax4.set_xlim([-2, 2])
+ax4.set_xlabel("Angle theta")
+ax4.set_ylabel("Varphi_3(theta)")
+
+ax5.scatter(x = angle_new, y = varphi_xy_new[:, 4], color='purple')
+ax5.set_xlim([-65, 65])
+ax5.set_xlim([-2, 2])
+ax5.set_xlabel("Angle theta")
+ax5.set_ylabel("Varphi_4(theta)")
+
+ax6.scatter(x = angle_new, y = varphi_xy_new[:, 5], color='yellow')
+ax6.set_xlim([-65, 65])
+ax6.set_xlim([-2, 2])
+ax6.set_xlabel("Angle theta")
+ax6.set_ylabel("Varphi_5(theta)")
+
+ax7.scatter(x = angle_new, y = varphi_xy_new[:, 6], color='brown')
+ax7.set_xlim([-65, 65])
+ax7.set_xlim([-2, 2])
+ax7.set_xlabel("Angle theta")
+ax7.set_ylabel("Varphi_6(theta)")
+
+ax8.scatter(x = angle_new, y = varphi_xy_new[:, 7], color='cyan')
+ax8.set_xlim([-65, 65])
+ax8.set_xlim([-2, 2])
+ax8.set_xlabel("Angle theta")
+ax8.set_ylabel("Varphi_7(theta)")
+
+ax9.scatter(x = angle_new, y = varphi_xy_new[:, 8], color='black')
+ax9.set_xlim([-65, 65])
+ax9.set_xlim([-2, 2])
+ax9.set_xlabel("Angle theta")
+ax9.set_ylabel("Varphi_8(theta)")
+
+
+ax10.scatter(x = angle_new, y = varphi_xy_new[:, 9], color='magenta')
+ax10.set_xlim([-65, 65])
+ax10.set_xlim([-2, 2])
+ax10.set_xlabel("Angle theta")
+ax10.set_ylabel("Varphi_9(theta)")
+
+
+plt.show()
 
 # %%
 
@@ -417,10 +574,10 @@ c = np.reshape(np.array(c), (2 * I + 1, 2 * I + 1, 2 * I + 1))
 g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
 g_coeff = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
 
-for i in range(0, 2*I+1):
-            for j in range(0, 2*I+1):
-                        for p in range(0, 2*I+1):
-                                    g_coeff[i,j,p] = (lambs[i] + lambs[j] - lambs[p])/2
+for p in range(0, 2*I+1):
+            for i in range(0, 2*I+1):
+                        for j in range(0, 2*I+1):
+                                    g_coeff[p, i,j] = (lambs[i] + lambs[j] - lambs[p])/2
                                     
 g = np.multiply(g_coeff, c)
 
@@ -436,7 +593,7 @@ g = np.multiply(g_coeff, c)
 # Compute G_ijpq entries for the Gram operator and its dual
 # using Monte Carlo integration
 G = np.zeros([2*I+1, 2*I+1, 2*I+1, 2*I+1], dtype = float)
-G = np.einsum('ipm, jqm -> ijpq', c, g, dtype = float)
+G = np.einsum('mip, mjq -> ijpq', c, g, dtype = float)
 
 G = G[:(2*J+1), :(2*K+1), :(2*J+1), :(2*K+1)]
 G = np.reshape(G, ((2*J+1)*(2*K+1), (2*J+1)*(2*K+1)))
@@ -460,7 +617,7 @@ plt.show()
 
 
 # Teuncate singular values of G based based on a small percentage of the largest singular valuecof G
-threshold = 1/(0.04*np.max(s2))      # Threshold value for truncated SVD
+threshold = 0.04      # Threshold value for truncated SVD
 
 
 # Compute duall Gram operator G* using pseudoinverse based on truncated singular values of G
@@ -479,7 +636,7 @@ to obtain v_hat'
 
 
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
-def monte_carlo_product(Phis, u, N = 800):
+def monte_carlo_product(Phis, u, N = 300):
     v_an = v1F(u)
     integral = (1/N)*np.sum(Phis*v_an, axis = 1)
     
@@ -601,20 +758,6 @@ ax2.set_ylabel("Y-coordinates of Vector Fields")
 ax2.set_title('Y-coordinates w.r.t. Angle Theta (true = black, SEC = red)')
 
 plt.show()
-# %%
-
-# %%
-vec_ana = v1F(THETA_LST)
-vec_sec = vector_approx[:, 2:4].T
-
-rss = np.sum(np.power((vec_ana - vec_sec), 2))
-
-vec_bar = np.mean(vec_ana, axis = 1)
-tss = np.sum(np.power(vec_ana, 2))
-
-R_squared = 1 - rss/tss
-print(R_squared)
-print(tss)
 # %%
 
 

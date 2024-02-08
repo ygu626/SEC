@@ -25,20 +25,18 @@ import multiprocess as mp
 
 
 # Parameters
-I = 100          # Inner index for eigenfunctions
-J = 90           # Outer index for eigenfunctions
-K = 40           # Index for gradients of eigenfunctions
+I = 80          # Inner index for eigenfunctions
+J = 60           # Outer index for eigenfunctions
+K = 30           # Index for gradients of eigenfunctions
 n = 100          # Number of approximated tangent vectors
 N = 100         # Number of Monte Carlo training data points 
 
-# epsilon = 0.31622777    # RBF bandwidth parameter
-# epsilon = 0.30902954    # RBF bandwidth parameter
-epsilon = 0.125
+epsilon = 0.12    # RBF bandwidth parameter
 
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
-a = 0.64618101811           # Radius of the latitude circle of the torus
-b = 0.28           # Radius of the meridian circle of the torus
+a = 5/3           # Radius of the latitude circle of the torus
+b = 3/5           # Radius of the meridian circle of the torus
 R = 1
 r = 1
 
@@ -52,7 +50,7 @@ and smbedding map F with pushforward F_*v = vF
 
 # Deterministically sampled Monte Carlo training data points
 # the latotude and meridian circles with radius a and b
-def monte_carlo_points(start_pt = 0, end_pt = 2*np.pi, N = 100, a = 1, b = 1):
+def monte_carlo_points(start_pt = 0, end_pt = 2*np.pi, N = 100, a = 5/3, b = 3/5):
     u_a = np.arange(start_pt, end_pt, 2*np.pi/N)
     u_b = np.arange(start_pt, end_pt, 2*np.pi/N)
     
@@ -146,9 +144,9 @@ training_data_flat = np.vstack([TRAIN_X_flat, TRAIN_Y_flat, TRAIN_Z_flat, TRAIN_
 fig = plt.figure(figsize = (10, 7))
 ax = plt.axes(projection ="3d")
 
-ax.set_xlim(-1,1)
-ax.set_ylim(-1,1)
-ax.set_zlim(-1,1)
+ax.set_xlim(-3,3)
+ax.set_ylim(-3,3)
+ax.set_zlim(-3,3)
 
 
 # ax.plot_surface(x_t_ode, y_t_ode, z_t_ode, antialiased=True, alpha = 0.6, color='orange')
@@ -254,6 +252,13 @@ Approximation of eigenvalues and eigenfunctions of the 0-Laplacian
 uo to a constant scaling factor
 """
 
+# %%
+x1 = np.array([[1,2,3], [4,5,6], [7,8,9]])
+x2 = np.array([1,2,3])
+x2 = x2.reshape([3,1])
+print(np.divide(x1,x2))
+# %%
+
 
 # Diffusion maps algorithm
 
@@ -281,9 +286,9 @@ def make_k_hat(k, q):
 
 
 # Build normalized kernel matrix K_hat
-q = make_normalization_func(k, training_data_flat)
+q = make_normalization_func(k, training_data)
 k_hat = make_k_hat(k, q)
-K_hat = k_hat(training_data_flat, training_data_flat)
+K_hat = k_hat(training_data, training_data)
 # print(K_hat[:2,:2])
 # %%
 
@@ -291,8 +296,8 @@ K_hat = k_hat(training_data_flat, training_data_flat)
 
 # %%
 # Normalization function d that corresponds to diagonal matrix D
-d = make_normalization_func(k_hat, training_data_flat)
-D = d(training_data_flat)
+d = make_normalization_func(k_hat, training_data)
+D = d(training_data)
 # %%
 
 
@@ -308,7 +313,7 @@ def make_p(k_hat, d):
 
 # Build Markov kernel matrix P
 p = make_p(k_hat, d)
-P = p(training_data_flat, training_data_flat)
+P = p(training_data, training_data)
 # print(P[:3,:3])
 
 print(np.trace(P))
@@ -320,8 +325,8 @@ print(np.pi/(4*epsilon**2))
 # Similarity transformation function s
 def make_s(p, d):
     def s(x, y):
-        d_x = np.power(d(x).reshape(d(x).shape[0], 1), (1/2))
-        d_y = np.power(d(y).reshape(1, d(y).shape[0]), (1/2))
+        d_x = np.power(d(x).reshape(1, d(x).shape[0]), (1/2))
+        d_y = np.power(d(y).reshape(d(y).shape[0], 1), (1/2))
         
         s_xy = np.divide(np.multiply(d_x, p(x, y)), d_y)
         return s_xy
@@ -329,7 +334,7 @@ def make_s(p, d):
 
 # Build Similarity matrix S
 s = make_s(p, d)
-S = s(training_data_flat, training_data_flat)
+S = s(training_data, training_data)
 # print(S[:3,:3])
 # %%
 
@@ -350,7 +355,8 @@ for i in range(0, 2*I+1):
             # lambs[i] = (4)*(-np.log(np.real(Lambs[i]))/(epsilon**2))
             lambs[i] = 4*(1 - np.real(Lambs[i]))/(epsilon**2)   
 
-print(Lambs)         
+print(Lambs) 
+       
 
 
 
@@ -361,21 +367,30 @@ for j in range(0, 2*I+1):
     Phis_normalized[:, j] = np.divide(np.real(Phis[:, j]), D_sqrt)
 
 Phis_normalized = Phis_normalized/Phis_normalized[0, 0]
-
+Phis_normalized = Phis_normalized/(2*np.pi)
 # %%
 
 
 # %%
-print(np.dot(Phis[:, 4], Phis[:, 2]))
+print(np.dot(Phis_normalized[:, 32], Phis_normalized[:, 32]*w))
 # %%
 
 # %%
-print(lambs/(4*np.pi**2))
 print(Phis_normalized[:, 0])
 print(np.max(Phis_normalized[:, 0]))
 print(np.min(Phis_normalized[:, 0]))
 # %%
 
+# %%
+D_bar = np.sum(D)
+w = np.empty(N**2, dtype = float)
+for i in range(0, N**2):
+    w[i] = (4*np.pi**2)*D[i]/D_bar
+# %%
+
+# %%
+print(np.sum(np.multiply(Phis_normalized[:, 45], Phis_normalized[:, 45]*w)))
+# %%
 
 
 # %%
@@ -388,8 +403,8 @@ def make_varphi(k, x_train, lambs, phis):
     return varphi
 
 # Produce continuous extentions varphi_j for the eigenfunctions Phi_j
-# varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
-varphi_flat = make_varphi(p, training_data_flat, Lambs, Phis_normalized)
+varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
+# varphi_flat = make_varphi(p, training_data_flat, Lambs, Phis_normalized)
 # %%
 
 
@@ -397,8 +412,8 @@ varphi_flat = make_varphi(p, training_data_flat, Lambs, Phis_normalized)
 
 # %%
 # Apply the coninuous extensiom varphi to the training data set
-# varphi_xyzw = varphi(training_data)
-varphi_xyzw = varphi_flat(training_data_flat)
+varphi_xyzw = varphi(training_data)
+# varphi_xyzw = varphi_flat(training_data_flat)
 
 # print(varphi_xyz[:,3])
 # %%
@@ -441,9 +456,12 @@ SEC approximation
 for pushforward of vector fields on the 2-torus embedded in R3
 """
 
+Phis_new = np.empty([N**2, 2*I+1], dtype = float)
+for i in range(0, 2*I+1):
+    Phis_new[:, i] = np.multiply(Phis_normalized[:, i], w)
 
 # Fourier coefficients F_ak pf F w.r.t. difusion maps approximated eigenvectors Phi_j
-F_ak = (1/(N**2))*np.matmul(F(training_angle[0, :], training_angle[1, :]), Phis_normalized)
+F_ak = np.matmul(F(training_angle[0, :], training_angle[1, :]), Phis_new)
 
 # print(F_ak[:, 2])
 
@@ -454,7 +472,7 @@ F_ak = (1/(N**2))*np.matmul(F(training_angle[0, :], training_angle[1, :]), Phis_
 pool = mp.Pool()
 
 def c_func(i, j, p):
-    return (1/(N**2))*np.sum(Phis_normalized[:, i]*Phis_normalized[:, j]*Phis_normalized[:, p])
+    return np.sum(Phis_normalized[:, i]*Phis_normalized[:, j]*Phis_normalized[:, p]*w)
 
 c = pool.starmap(c_func, 
               [(i, j, p) for i in range(0, 2 * I + 1)
@@ -462,10 +480,15 @@ c = pool.starmap(c_func,
                 for p in range(0, 2 * I + 1)])
             
 c = np.reshape(np.array(c), (2 * I + 1, 2 * I + 1, 2 * I + 1))
-# print(c[:2,:2,:2])
+# %%
 
 
+# %%
+print(c[0, 4, 4])
+# %%
 
+
+# %%
 # Compute g_ijp Riemannian metric coefficients
 # using Monte Carlo integration
 g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
@@ -522,6 +545,7 @@ plt.title('Singular Values of the Gram Operator G_ijpq (descending order)')
 plt.show()
 # %%
 
+
 # %%
 print(np.max(s2))
 print(np.min(s2))
@@ -551,7 +575,7 @@ v1F_flat = lambda theta, rho: np.array([-a*np.sin(theta), a*np.cos(theta), -b*np
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
 def monte_carlo_product(Phis, training_angle, N = 100):
     v_an = v1F(training_angle[0, :], training_angle[1, :])
-    integral = (1/(N**2))*np.sum(Phis*v_an, axis = 1)
+    integral = np.sum(Phis*v_an*w, axis = 1)
     
     return integral
 
@@ -656,7 +680,7 @@ vector_approx = np.empty([int(N**2), 6], dtype = float)
 for i in range(0, int(N**2)):
     vector_approx[i, :] = np.array([TRAIN_X[i], TRAIN_Y[i], TRAIN_Z[i], W_x[i], W_y[i], W_z[i]])
 
-print(vector_approx[:, 2])
+# print(vector_approx[:, 2])
 # %%
 
 
@@ -673,12 +697,13 @@ norm_ratio = ana_norm/sec_norm
 
 # print(np.amax(norm_ratio))
 # print(np.amin(norm_ratio))
-# print(norm_ratio)
-print(np.amin(sec_norm))
-print(np.amax(sec_norm))
+print(norm_ratio)
+print(np.amin(norm_ratio))
+print(np.amax(norm_ratio))
+# %%
 
-scaling_factor = np.mean(norm_ratio)
 
+# %%
 rss = np.sum(np.power((vec_ana - vec_sec), 2))
 
 vec_bar = np.mean(vec_ana, axis = 1)
@@ -694,7 +719,7 @@ print(R_squared)
 
 
 #%%
-def plot_torus(precision, a = 0.64618101811, b = 0.28):
+def plot_torus(precision, a = 5/3, b = 3/5):
     U_t = np.linspace(0, 2*np.pi, precision)
     V_t = np.linspace(0, 2*np.pi, precision)
     
@@ -712,7 +737,7 @@ def plot_torus(precision, a = 0.64618101811, b = 0.28):
 
     
 
-x_t, y_t, z_t, rd_idx = plot_torus(100, 0.64618101811, 0.28)
+x_t, y_t, z_t, rd_idx = plot_torus(100, 5/3, 3/5)
 print(rd_idx)
 
 
@@ -742,9 +767,9 @@ fig = plt.figure(figsize=plt.figaspect(0.5))
 ax = fig.add_subplot(1, 2, 1, projection='3d')
 
 ax.set_title('SEC approximated vector field on a torus embedded in R^3')
-ax.set_xlim(-1,1)
-ax.set_ylim(-1,1)
-ax.set_zlim(-1,1)
+ax.set_xlim(-2,2)
+ax.set_ylim(-2,2)
+ax.set_zlim(-2,2)
 
 ax.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
 ax.quiver(x2, y2, z2, a2, b2, c2, length = 1, color = 'blue')
@@ -753,9 +778,9 @@ ax.quiver(x2, y2, z2, a2, b2, c2, length = 1, color = 'blue')
 ax = fig.add_subplot(1, 2, 2, projection='3d')
 
 ax.set_title('Analytic vector field on a torus embedded in R^3')
-ax.set_xlim(-1,1)
-ax.set_ylim(-1,1)
-ax.set_zlim(-1,1)
+ax.set_xlim(-2,2)
+ax.set_ylim(-2,2)
+ax.set_zlim(-2,2)
 
 ax.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
 ax.quiver(x3, y3, z3, a3, b3, c3, length = 1, color = 'red')

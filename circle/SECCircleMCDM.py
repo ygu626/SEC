@@ -20,12 +20,12 @@ from scipy.integrate import solve_ivp
 
 # Parameters
 I = 20          # Inner index for eigenfunctions
-J = 5           # Outer index for eigenfunctions
+J = 10           # Outer index for eigenfunctions
 K = 5           # Index for gradients of eigenfunctions
 n = 8          # Number of approximated tangent vectors
-N = 300         # Number of Monte Carlo training data points 
+N = 800         # Number of Monte Carlo training data points 
 
-epsilon = 0.25  # RBF bandwidth parameter
+epsilon = 0.2  # RBF bandwidth parameter
 tau = 0         # Weight parameter for Laplacian eigenvalues
 alpha = 1       # Weight parameter for Markov kernel matrix
 C = 1.5         # Component function parameter for vector field v
@@ -40,14 +40,14 @@ and Embedding map F with pushforward vF
 
 
 # Deterministically sampled Monte Carlo training data points
-def monte_carlo_points(a = 0, b = 2*np.pi, N = 300):
-    u = np.zeros(N)
-    subsets = np.arange(0, N+1, N/400)
-    for i in range(0, 400):
-        start = int(subsets[i])
-        end = int(subsets[i+1])
-        u[start:end] = random.uniform(low = (i/400)*b, high = ((i+1)/400)*b, size = end - start)
-    random.shuffle(u)
+def monte_carlo_points(start_pt = 0, end_pt = 2*np.pi, N = 800):
+    u = np.arange(start_pt, end_pt, 2*np.pi/N)
+    # subsets = np.arange(0, N+1, N/400)
+    # for i in range(0, 400):
+    #    start = int(subsets[i])
+    #    end = int(subsets[i+1])
+    #    u[start:end] = random.uniform(low = (i/400)*b, high = ((i+1)/400)*b, size = end - start)
+    # random.shuffle(u)
     
     training_data = np.empty([2, N], dtype = float)
     for j in range(0, N):
@@ -184,7 +184,7 @@ D = d(training_data)
 # Markov kernel function p
 def make_p(k_hat, d):
     def p(x, y):
-        d_x = d(x).reshape(d(x).shape[0], 1)
+        d_x = d(x).reshape(1, d(x).shape[0])
 
         p_xy = np.divide(k_hat(x, y), d_x)
         return p_xy
@@ -193,15 +193,18 @@ def make_p(k_hat, d):
 # Build Markov kernel matrix P
 p = make_p(k_hat, d)
 P = p(training_data, training_data)
-# print(P[:3,:3])
+
+print(np.trace(P))
+print(np.sqrt(np.pi)/(2*epsilon))
+# %%
 
 # Similarity transformation function s
 def make_s(p, d):
     def s(x, y):
-        d_x = d(x)
-        d_y = d(y).reshape(d(y).shape[0], 1)
+        d_x = np.power(d(x).reshape(1, d(x).shape[0]), (1/2))
+        d_y = np.power(d(y).reshape(d(y).shape[0], 1), (1/2))
         
-        s_xy = np.divide(np.multiply(p(x, y), d_x), d_y)
+        s_xy = np.divide(np.multiply(d_x, p(x, y)), d_y)
         return s_xy
     return s
 
@@ -225,18 +228,26 @@ for i in range(0, 2*I+1):
 print(lambs)         
 # %%
 
+
 # Normalize eigenfunctions Phi_j
 Phis_normalized = np.empty([N, 2*I+1], dtype = float)
+D_sqrt = np.power(D.reshape(1, D.shape[0]), (1/2))
 for j in range(0, 2*I+1):
-    Phis_normalized[:, j] = np.real(Phis[:, j])*np.sqrt(N)
+    Phis_normalized[:, j] = np.divide(np.real(Phis[:, j]), D_sqrt)
+
+Phis_normalized = Phis_normalized/Phis_normalized[0, 0]
+
+# %%
+
+
+# %%
+print(np.dot(Phis_normalized[:, 3], Phis_normalized[:, 3]))
 
 print(Phis_normalized[:, 0])
+print(np.max(Phis_normalized[:, 0]))
+print(np.min(Phis_normalized[:, 0]))
 # %%
 
-# %%
-print(np.matmul(S, Phis[:, 0]))
-
-# %%
 
 
 # Appeoximate eigenvalues and eigenfunctions for the 0-Laplacian
@@ -505,7 +516,7 @@ plt.show()
 # %%
 
 
-
+# %%
 """
 Check accuracy of diffusion maps approximation
 for eigenvalues and eigenfunctions of 0-Laplacian
@@ -572,20 +583,12 @@ c = np.reshape(np.array(c), (2 * I + 1, 2 * I + 1, 2 * I + 1))
 # Compute g_ijp Riemannian metric coefficients
 # using Monte Carlo integration
 g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
-g_coeff = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
 
+g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
 for p in range(0, 2*I+1):
             for i in range(0, 2*I+1):
                         for j in range(0, 2*I+1):
-                                    g_coeff[p, i,j] = (lambs[i] + lambs[j] - lambs[p])/2
-                                    
-g = np.multiply(g_coeff, c)
-
-# g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
-# for i in range(0, 2*I+1):
-#             for j in range(0, 2*I+1):
-#                         for p in range(0, 2*I+1):
-#                                     g[i,j,p] = (lambs[i] + lambs[j] - lambs[p])*c[i,j,p]/2
+                                    g[p,i,j] = (lambs[i] + lambs[j] - lambs[p])*c[i,j,p]/2
          
 # print(g[:,3,3])
 
@@ -636,7 +639,7 @@ to obtain v_hat'
 
 
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
-def monte_carlo_product(Phis, u, N = 300):
+def monte_carlo_product(Phis, u, N = 800):
     v_an = v1F(u)
     integral = (1/N)*np.sum(Phis*v_an, axis = 1)
     

@@ -39,6 +39,7 @@ a = 5/3           # Radius of the latitude circle of the torus
 b = 3/5           # Radius of the meridian circle of the torus
 R = 1
 r = 1
+ALPHA = np.sqrt(20)
 
 
 """
@@ -209,9 +210,17 @@ Functions utilized in the following program
 # Embedding map F and its pushforward F_* applied to vector field v
 F = lambda theta, rho: np.array([(a + b*np.cos(rho))*np.cos(theta), (a + b*np.cos(rho))*np.sin(theta), b*np.sin(rho)])
 v1F = lambda theta, rho: np.array([-b*np.sin(rho)*np.cos(theta) - (a + b*np.cos(rho))*np.sin(theta), -b*np.sin(rho)*np.sin(theta) + (a + b*np.cos(rho))*np.cos(theta), b*np.cos(rho)])
+v2F = lambda theta, rho: np.array([-b*ALPHA*np.sin(rho)*np.cos(theta) - (a + b*np.cos(rho))*np.sin(theta), -b*ALPHA*np.sin(rho)*np.sin(theta) + (a + b*np.cos(rho))*np.cos(theta), b*ALPHA*np.cos(rho)])
+
+v32 = lambda theta, rho: ALPHA*(1 - np.cos(theta - rho))
+v31 = lambda theta, rho: v32(theta, rho) + (1 - ALPHA)*(1 - np.cos(rho))
+v3F = lambda theta, rho: np.array([-v32(theta, rho)*b*np.sin(rho)*np.cos(theta) - v31(theta, rho)*(a + b*np.cos(rho))*np.sin(theta), 
+                                   -v32(theta, rho)*b*np.sin(rho)*np.sin(theta) + v31(theta, rho)*(a + b*np.cos(rho))*np.cos(theta), 
+                                   v32(theta, rho)*b*np.cos(rho)])
+
 
 # Analytical tangent vector coordinates
-ana_dir_coords = np.vstack([TRAIN_X, TRAIN_Y, TRAIN_Z, v1F(training_angle[0, :], training_angle[1, :])])
+ana_dir_coords = np.vstack([TRAIN_X, TRAIN_Y, TRAIN_Z, v3F(training_angle[0, :], training_angle[1, :])])
 
 
 # Double and triple products of functions
@@ -417,6 +426,7 @@ varphi_xyzw = varphi(training_data)
 
 # print(varphi_xyz[:,3])
 # %%
+
 
 # %%
 """
@@ -766,24 +776,24 @@ fig = plt.figure(figsize=plt.figaspect(0.5))
 
 ax = fig.add_subplot(1, 2, 1, projection='3d')
 
-ax.set_title('SEC approximated vector field on a torus embedded in R^3')
-ax.set_xlim(-2,2)
-ax.set_ylim(-2,2)
-ax.set_zlim(-2,2)
+ax.set_title('Analytic vector field on a torus in R^3')
+ax.set_xlim(-3,3)
+ax.set_ylim(-3,3)
+ax.set_zlim(-3,3)
 
 ax.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
-ax.quiver(x2, y2, z2, a2, b2, c2, length = 1, color = 'blue')
+ax.quiver(x3, y3, z3, a3, b3, c3, length = 1, color = 'red')
 
 
 ax = fig.add_subplot(1, 2, 2, projection='3d')
 
-ax.set_title('Analytic vector field on a torus embedded in R^3')
-ax.set_xlim(-2,2)
-ax.set_ylim(-2,2)
-ax.set_zlim(-2,2)
+ax.set_title('SEC approximated vector field on a torus in R^3')
+ax.set_xlim(-3,3)
+ax.set_ylim(-3,3)
+ax.set_zlim(-3,3)
 
 ax.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
-ax.quiver(x3, y3, z3, a3, b3, c3, length = 1, color = 'red')
+ax.quiver(x2, y2, z2, a2, b2, c2, length = 1, color = 'blue')
 
   
 plt.show()
@@ -793,9 +803,9 @@ plt.show()
 ax2 = plt.axes(projection = '3d')
 
 ax2.set_title('Comparisons of analytic and SEC approximated vector fields on a torus embedded in R^3')
-ax2.set_xlim(-1,1)
-ax2.set_ylim(-1,1)
-ax2.set_zlim(-1,1)
+ax2.set_xlim(-3,3)
+ax2.set_ylim(-3,3)
+ax2.set_zlim(-3,3)
 
 ax2.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
 
@@ -831,77 +841,43 @@ rho_t = lambda t: rho_0 + t
 sol_true_theta = theta_t(tspan)
 sol_true_rho = rho_t(tspan)
 
-# sol_true_a = np.empty([2, 1000], dtype = float)
-# sol_true_b = np.empty([2, 1000], dtype = float)
-
-
-# for j in range(0, 1000):    
-#    sol_true_a[:, j] = np.array([np.cos(sol_true_theta[j]), np.sin(sol_true_theta[j])])
-#    sol_true_b[:, j] = np.array([np.cos(sol_true_rho[j]), np.sin(sol_true_rho[j])])
-
-
-# THETA_SOL_TRUE, RHO_SOL_TRUE = np.meshgrid(sol_true_theta, sol_true_rho)
-
-# sol_true_angle = np.vstack([THETA_SOL_TRUE.ravel(), RHO_SOL_TRUE.ravel()])
-
 
 SOL_TRUE_X = X_func(sol_true_theta, sol_true_rho)
 SOL_TRUE_Y = Y_func(sol_true_theta, sol_true_rho)
 SOL_TRUE_Z = Z_func(sol_true_theta)
 
 sol_true_xyz_coords = np.vstack([SOL_TRUE_X, SOL_TRUE_Y, SOL_TRUE_Z])
-
-
-fig = plt.figure(figsize = (10, 7))
-ax = plt.axes(projection ="3d")
- 
-x_t_ode, y_t_ode, z_t_ode, rd_idx2 = plot_torus(100, 0.64618101811, 0.28)
-
-ax.set_xlim(-1,1)
-ax.set_ylim(-1,1)
-ax.set_zlim(-1,1)
-
-
-# ax.plot_surface(x_t_ode, y_t_ode, z_t_ode, antialiased=True, alpha = 0.6, color='orange')
-
- 
-ax.scatter3D(SOL_TRUE_X, SOL_TRUE_Y, SOL_TRUE_Z, color = "green")
-plt.title("Solutions to ODE under the true system on the torus")
- 
-plt.show()
 # %%
 
 
+# %%
+"""
+True system under the Stepanoff flow
+"""
 
-# Plot solutions to the true system
-sidefig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
-
-ax1.scatter(x = sol_true_a[0,:], y = sol_true_a[1,:], color = 'green')
-ax1.set_xlim([-3,3])
-ax1.set_ylim([-3,3])
-ax1.set_title('Solution angles theta to the ODE under the true system')
-
-ax2.scatter(x = sol_true_b[0,:], y = sol_true_b[1,:], color = 'orange')
-ax2.set_xlim([-3,3])
-ax2.set_ylim([-3,3])
-ax2.set_title('Solution angles rho to the ODE under the true system')
-
-plt.show()
+# Define derivative function for the true system under the Stepanoff flow
+def f_true(t, y):
+    theta, rho = y
+    
+    # dydt = [-v32(theta, rho)*b*np.sin(rho)*np.cos(theta) - v31(theta, rho)*(a + b*np.cos(rho))*np.sin(theta), -v32(theta, rho)*b*np.sin(rho)*np.sin(theta) + v31(theta, rho)*(a + b*np.cos(rho))*np.cos(theta), v32(theta, rho)*b*np.cos(rho)]
+    dydt = [v31(theta, rho), v32(theta, rho)]
+    return dydt
 
 
-sidefig, (ax1, ax2, ax3) = plt.subplots(3, figsize=(24, 16))
-sidefig.suptitle('Solution coordinates to the ODE under the true system')
+# Define time spans and initial values for the SEC approximated system
+tspan = np.linspace(0, 20, num=2000)
+theta_0 = np.pi
+rho_0 = np.pi
+yinit = [theta_0, rho_0]
 
-ax1.plot(tspan, SOL_TRUE_X, color='red')
-ax1.set_title('x--coordinates prediction w.r.t. time t')
 
-ax2.plot(tspan, SOL_TRUE_Y, color='blue')
-ax2.set_title('y-coordinates prediction w.r.t. time t')
+# Solve ODE under the SEC approximated system
+sol_true = solve_ivp(f_true, [tspan[0], tspan[-1]], yinit, t_eval=tspan, rtol = 1e-5)
 
-ax3.plot(tspan, SOL_TRUE_Z, color='brown')
-ax3.set_title('z-coordinates prediction w.r.t. time t')
 
-plt.show()
+SOL_TRUE_X = X_func(sol_true.y[0, :], sol_true.y[1, :])
+SOL_TRUE_Y = Y_func(sol_true.y[0, :], sol_true.y[1, :])
+SOL_TRUE_Z = Z_func(sol_true.y[1, :])
 # %%
 
 
@@ -912,7 +888,7 @@ SEC Approximated System
 """
 
 def W_theta_ode(y):
-    varphi_xyz = np.real(varphi_flat(np.reshape(np.array(y), (4, 1))))
+    varphi_xyz = np.real(varphi(np.reshape(np.array(y), (3, 1))))
     W_x = np.sum(p_am[0, :]*varphi_xyz)
     W_y = np.sum(p_am[1, :]*varphi_xyz)
     W_z = np.sum(p_am[2, :]*varphi_xyz)
@@ -925,83 +901,76 @@ def W_theta_ode(y):
 def f_sec(t, y):
     W_x, W_y, W_z = W_theta_ode(y)
     dydt = [W_x, W_y, W_z]
-    # dydt = [0,0,0]
     return dydt
 
 # Define time spans and initial values for the SEC approximated system
 tspan = np.linspace(0, 20, num=2000)
-yinit = [a, 0, b, 0]
+yinit = [-a+b, 0, 0]
 
 
 # Solve ODE under the SEC approximated system
-sol_sec = solve_ivp(lambda t, y: f_sec(t, y),
-                    [tspan[0], tspan[-1]], yinit, t_eval=tspan, rtol = 1e-5)
+sol_sec = solve_ivp(f_sec, [tspan[0], tspan[-1]], yinit, t_eval=tspan, rtol = 1e-5)
 
-# print(sol_sec.shape)
-# %%
 
-# %%
 SOL_SEC_X = sol_sec.y[0, :]
 SOL_SEC_Y = sol_sec.y[1, :]
 SOL_SEC_Z = sol_sec.y[2, :]
-
-
-fig = plt.figure(figsize = (10, 7))
-ax = plt.axes(projection ="3d")
- 
-x_t_ode, y_t_ode, z_t_ode, rd_idx2 = plot_torus(100, 0.64618101811, 0.28)
-
-ax.set_xlim(-1,1)
-ax.set_ylim(-1,1)
-ax.set_zlim(-1,1)
-
-# ax.plot_surface(x_t_ode, y_t_ode, z_t_ode, antialiased=True, alpha = 0.6, color='orange')
-
- 
-ax.scatter3D(SOL_SEC_X, SOL_SEC_Y, SOL_SEC_Z, color = "green")
-plt.title("Solutions to ODE under the SEC approximated system on the torus")
- 
-plt.show()
-
 # %%
 
 
 
-# Plot solutions to the SEC approximated system
-plt.figure(figsize=(8, 8))
-plt.plot(sol_sec.y.T[:, 0], sol_sec.y.T[:, 1])
+# %%
+# Comparisons of the solutions to the ODE
+# under the true and SEC approximated systems
+fig = plt.figure(figsize=plt.figaspect(0.5))
 
-plt.xlabel('x')
-plt.ylabel('y')
-plt.title('Solutions to ODE under the SEC approximated system')
+ax = fig.add_subplot(1, 2, 1, projection='3d')
+
+ax.set_title('Solutions to ODE under the true system')
+ax.set_xlim(-3,3)
+ax.set_ylim(-3,3)
+ax.set_zlim(-3,3)
+
+ax.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
+ax.scatter3D(SOL_TRUE_X, SOL_TRUE_Y, SOL_TRUE_Z, color = "red")
+
+
+ax = fig.add_subplot(1, 2, 2, projection='3d')
+
+ax.set_title('Solution to ODE under the SEC approximated system')
+ax.set_xlim(-3,3)
+ax.set_ylim(-3,3)
+ax.set_zlim(-3,3)
+
+ax.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
+ax.scatter3D(SOL_SEC_X, SOL_SEC_Y, SOL_SEC_Z, color = "blue")
+
+  
 plt.show()
 
 
-sidefig, (ax1, ax2, ax3) = plt.subplots(3, figsize=(24, 16))
-sidefig.suptitle('Solutions to ODE under the SEC approximated system')
 
-ax1.plot(sol_sec.t, sol_sec.y.T, color='blue')
-ax1.set_title('x- & y-coordinates prediction w.r.t. time t')
+sidefig, (ax1, ax2, ax3) = plt.subplots(3, figsize=(48, 24))
+sidefig.suptitle('Comparisons for time series of solution coordinates under the true and SEC approximated systems')
 
-ax2.plot(sol_sec.t, sol_sec.y.T[:, 0], color='blue')
-ax2.set_title('x-coordinates prediction w.r.t. time t')
-
-ax3.plot(sol_sec.t, sol_sec.y.T[:, 1], color='blue')
-ax3.set_title('y-coordinates prediction w.r.t. time t')
-
-plt.show()
-
-
-sidefig, (ax1, ax2) = plt.subplots(2, figsize=(48, 12))
-sidefig.suptitle('Comparisons for solutions to ODE under the true and SEC approximated systems')
-
-ax1.plot(sol_true.t, sol_true.y.T[:, 0], color='red')
+ax1.plot(sol_sec.t, SOL_TRUE_X, color='red')
 ax1.plot(sol_sec.t, sol_sec.y.T[:, 0], color='blue')
-ax1.set_title('x-coordinates prediction w.r.t. time t (true = red, SEC = blue)')
+ax1.set_title('x-coordinate predictions w.r.t. time t')
 
-ax2.plot(sol_true.t, sol_true.y.T[:, 1], color='red')
+ax2.plot(sol_sec.t, SOL_TRUE_Y, color='red')
+ax2.plot(sol_sec.t, sol_sec.y.T[:, 1], color='blue')
+ax2.set_title('y-coordinate predictionS w.r.t. time t')
+
+ax3.plot(sol_sec.t, SOL_TRUE_Z, color='red')
+ax3.plot(sol_sec.t, sol_sec.y.T[:, 2], color='blue')
+ax3.set_title('Z-coordinate predictionS w.r.t. time t')
+
+
+plt.show()
+# %%
+
+
+ax2.plot(sol_sec.t, sol_true.y.T[:, 1], color='red')
 ax2.plot(sol_sec.t, sol_sec.y.T[:, 1], color='blue')
 ax2.set_title('y-coordinates prediction w.r.t. time t (true = red, SEC = blue)')
 
-plt.show()
-# %%

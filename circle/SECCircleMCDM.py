@@ -766,8 +766,8 @@ plt.show()
 
 
 """
-Plot the pushfoward map F_* of the embedding F
-as a quiver plot in R62 to capture tbe bias in SEC approximation
+Plot the pushfoward map F_* of the embedding F applying to v
+as a quiver plot in R^2 to capture the bias in SEC approximation
 using meshgrid as the training data set
 """
 

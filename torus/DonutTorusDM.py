@@ -411,6 +411,7 @@ def make_varphi(k, x_train, lambs, phis):
         return y
     return varphi
 
+
 # Produce continuous extentions varphi_j for the eigenfunctions Phi_j
 varphi = make_varphi(p, training_data, Lambs, Phis_normalized)
 # varphi_flat = make_varphi(p, training_data_flat, Lambs, Phis_normalized)
@@ -584,7 +585,7 @@ v1F_flat = lambda theta, rho: np.array([-a*np.sin(theta), a*np.cos(theta), -b*np
 
 # (L2) Deterministic Monte Carlo integral of products between eigenfunction phi_mn and "arrows" v_an
 def monte_carlo_product(Phis, training_angle, N = 100):
-    v_an = v1F(training_angle[0, :], training_angle[1, :])
+    v_an = v3F(training_angle[0, :], training_angle[1, :])
     integral = np.sum(Phis*v_an*w, axis = 1)
     
     return integral
@@ -739,7 +740,7 @@ def plot_torus(precision, a = 5/3, b = 3/5):
     Y_t = (a + b*np.cos(U_t))*np.sin(V_t)
     Z_t = b*np.sin(U_t)
     
-    random_num = 200    # for 500 random indices
+    random_num = 100    # for 500 random indices
     random_index = np.random.choice(vector_approx.shape[0], random_num, replace = False)  
 
     
@@ -747,7 +748,7 @@ def plot_torus(precision, a = 5/3, b = 3/5):
 
     
 
-x_t, y_t, z_t, rd_idx = plot_torus(100, 5/3, 3/5)
+x_t, y_t, z_t, rd_idx = plot_torus(500, 5/3, 3/5)
 print(rd_idx)
 
 
@@ -818,6 +819,80 @@ plt.show()
 # %%
 
 
+# %%
+"""
+Plot the pushfoward map F_* of the embedding F applied to v
+as a quiver plot in R^3 to capture the bias in SEC approximation
+using meshgrid as the training data set
+"""
+
+
+m = 5           #Square root of number of points used in quiver plot of F_*
+
+x_train_new = np.linspace(-2.5, 2.5, m)
+y_train_new = np.linspace(-2.5, 2.5, m)
+z_train_new = np.linspace(-2.5, 2.5, m)
+
+
+X_TRAIN_NEW, Y_TRAIN_NEW, Z_TRAIN_NEW = np.meshgrid(x_train_new, y_train_new, z_train_new)
+
+training_data_new = np.vstack([X_TRAIN_NEW.ravel(), Y_TRAIN_NEW.ravel(), Z_TRAIN_NEW.ravel()])
+
+varphi_xyz_new = np.zeros([int(m**3), 2*I+1],  dtype = float)
+for i in range(0, int(m**3)):
+    varphi_xyz_new[i, :] = np.real(varphi(np.reshape(np.array(training_data_new[:, i]), (3, 1))))
+# %%
+
+
+# %%
+W_theta_x_new = np.zeros(int(m**3), dtype = float)
+W_theta_y_new = np.zeros(int(m**3), dtype = float)
+W_theta_z_new = np.zeros(int(m**3), dtype = float)
+
+
+def W_theta_new(varphi_xyz_new):    
+    for i in range(0, int(m**3)):
+        W_theta_x_new[i] = np.sum(p_am[0, :]*varphi_xyz_new[i, :])
+        W_theta_y_new[i] = np.sum(p_am[1, :]*varphi_xyz_new[i, :])
+        W_theta_z_new[i] = np.sum(p_am[2, :]*varphi_xyz_new[i, :])
+
+    return W_theta_x_new, W_theta_y_new, W_theta_z_new
+
+
+W_x_new, W_y_new, W_z_new = W_theta_new(varphi_xyz_new)
+
+
+vector_approx_new = np.empty([int(m**3), 6], dtype = float)
+for i in range(0, int(m**3)):
+    vector_approx_new[i, :] = np.array([training_data_new[0, i], training_data_new[1, i], training_data_new[2, i], W_x_new[i], W_y_new[i], W_z_new[i]])
+# %%
+
+
+
+# %%
+# Quiver plot of vF 
+# (pushforward of the embedding function F applied to v)
+plt.figure()
+
+ax = plt.axes(projection = '3d')
+
+ax.quiver(vector_approx_new[:, 0], vector_approx_new[:, 1], vector_approx_new[:, 2], vector_approx_new[:, 3], vector_approx_new[:, 4], vector_approx_new[:, 5], color = 'blue')
+
+
+ax.set_title('Quiver Plot of the SEC Approximated Function vF: R3-->R3')
+ax.set_xlim([-3.5, 3.5])
+ax.set_ylim([-3.5, 3.5])
+ax.set_zlim([-3.5, 3.5])
+
+
+plt.show()
+# %%
+
+
+"""
+Forward evolution/prediction of
+true and SEC approximated dynamical systems
+"""
 
 # ODE solver applied to the SEC approximated vector fields
 # with initial condition specified
@@ -844,7 +919,7 @@ sol_true_rho = rho_t(tspan)
 
 SOL_TRUE_X = X_func(sol_true_theta, sol_true_rho)
 SOL_TRUE_Y = Y_func(sol_true_theta, sol_true_rho)
-SOL_TRUE_Z = Z_func(sol_true_theta)
+SOL_TRUE_Z = Z_func(sol_true_rho)
 
 sol_true_xyz_coords = np.vstack([SOL_TRUE_X, SOL_TRUE_Y, SOL_TRUE_Z])
 # %%
@@ -931,8 +1006,8 @@ ax.set_xlim(-3,3)
 ax.set_ylim(-3,3)
 ax.set_zlim(-3,3)
 
-ax.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
-ax.scatter3D(SOL_TRUE_X, SOL_TRUE_Y, SOL_TRUE_Z, color = "red")
+# ax.plot_surface(x_t, y_t, z_t, antialiased=True, alpha = 0.4, color='orange')
+ax.scatter3D(SOL_TRUE_X, SOL_TRUE_Y, SOL_TRUE_Z, s = 0.05, color = "red")
 
 
 ax = fig.add_subplot(1, 2, 2, projection='3d')
@@ -942,8 +1017,8 @@ ax.set_xlim(-3,3)
 ax.set_ylim(-3,3)
 ax.set_zlim(-3,3)
 
-ax.plot_surface(x_t, y_t, z_t, antialiased=True, color='orange')
-ax.scatter3D(SOL_SEC_X, SOL_SEC_Y, SOL_SEC_Z, color = "blue")
+# ax.plot_surface(x_t, y_t, z_t, antialiased=True, alpha = 0.4, color='orange')
+ax.scatter3D(SOL_SEC_X, SOL_SEC_Y, SOL_SEC_Z, s = 0.05, color = "blue")
 
   
 plt.show()
@@ -968,9 +1043,3 @@ ax3.set_title('Z-coordinate predictionS w.r.t. time t')
 
 plt.show()
 # %%
-
-
-ax2.plot(sol_sec.t, sol_true.y.T[:, 1], color='red')
-ax2.plot(sol_sec.t, sol_sec.y.T[:, 1], color='blue')
-ax2.set_title('y-coordinates prediction w.r.t. time t (true = red, SEC = blue)')
-

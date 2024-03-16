@@ -261,12 +261,6 @@ Approximation of eigenvalues and eigenfunctions of the 0-Laplacian
 uo to a constant scaling factor
 """
 
-# %%
-x1 = np.array([[1,2,3], [4,5,6], [7,8,9]])
-x2 = np.array([1,2,3])
-x2 = x2.reshape([3,1])
-print(np.divide(x1,x2))
-# %%
 
 
 # Diffusion maps algorithm
@@ -358,6 +352,14 @@ Phis = np.real(eigenvectors[:, index])
 # %%
 
 # %%
+D_bar = np.sum(D)
+w = np.empty(N**2, dtype = float)
+for i in range(0, N**2):
+    w[i] = (4*np.pi**2)*D[i]/D_bar
+# %%
+
+
+# %%
 # Compute approximated 0-Laplacian eigengunctions
 lambs = np.empty(2*I+1, dtype = float)
 for i in range(0, 2*I+1):
@@ -390,12 +392,6 @@ print(np.max(Phis_normalized[:, 0]))
 print(np.min(Phis_normalized[:, 0]))
 # %%
 
-# %%
-D_bar = np.sum(D)
-w = np.empty(N**2, dtype = float)
-for i in range(0, N**2):
-    w[i] = (4*np.pi**2)*D[i]/D_bar
-# %%
 
 # %%
 print(np.sum(np.multiply(Phis_normalized[:, 45], Phis_normalized[:, 45]*w)))
@@ -480,18 +476,57 @@ F_ak = np.matmul(F(training_angle[0, :], training_angle[1, :]), Phis_new)
 
 # Compute c_ijp coefficients
 # using Monte Carlo integration
-pool = mp.Pool()
 
-def c_func(i, j, p):
-    return np.sum(Phis_normalized[:, i]*Phis_normalized[:, j]*Phis_normalized[:, p]*w)
 
-c = pool.starmap(c_func, 
-              [(i, j, p) for i in range(0, 2 * I + 1)
-                for j in range(0, 2 * I + 1)
-                for p in range(0, 2 * I + 1)])
-            
-c = np.reshape(np.array(c), (2 * I + 1, 2 * I + 1, 2 * I + 1))
+
+A = np.array([[1, 2, 3], [4, 5, 6]])
+B = np.array([[1, 1, 1], [2, 1, 2]])
+
+E1 = A[:, None]
+E2 = B[None, ...]
+E = np.sum((E1*E2).reshape(4, A.shape[-1]), axis = 1)
+
+print(E)
+
 # %%
+
+
+
+# %%
+c = np.empty([(2*I+1), (2*I+1)*(2*I+1)], dtype = float)
+
+c_i = Phis_normalized[:, None]
+c_j = Phis_normalized[..., None]
+c_p = Phis_new[..., None]
+
+
+c_ij = ((np.multiply(c_i, c_j)).reshape(c_i.shape[0], -1))[:, None]
+
+for p in range(0, 2*I+1):
+    c[p, :] = np.sum(np.multiply(c_ij, c_p[:, p, :][..., None]), axis = 0)
+
+c = np.reshape(np.array(c), (2 * I + 1, 2 * I + 1, 2 * I + 1))
+
+
+
+# pool = mp.Pool()
+
+# def c_func(i, j, p):
+#    return np.sum(Phis_normalized[:, i]*Phis_normalized[:, j]*Phis_normalized[:, p]*w)
+
+# c = pool.starmap(c_func, 
+#              [(i, j, p) for i in range(0, 2 * I + 1)
+#                for j in range(0, 2 * I + 1)
+#                for p in range(0, 2 * I + 1)])
+   
+# %% 
+
+
+# %%
+print(c_ij.shape)
+# %%
+        
+
 
 
 # %%
@@ -503,21 +538,20 @@ print(c[0, 4, 4])
 # Compute g_ijp Riemannian metric coefficients
 # using Monte Carlo integration
 g = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
-# g_coeff = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
-
-# for p in range(0, 2*I+1):
-#    for i in range(0, 2*I+1):
-#        for j in range(0, 2*I+1):
-#            g_coeff[p, i,j] = (lambs[i] + lambs[j] - lambs[p])/2
-#
-# g = np.multiply(g_coeff, c)
-
-
+g_coeff = np.empty([2*I+1, 2*I+1, 2*I+1], dtype = float)
 
 for p in range(0, 2*I+1):
     for i in range(0, 2*I+1):
         for j in range(0, 2*I+1):
-            g[p,i,j] = (lambs[i] + lambs[j] - lambs[p])*c[i,j,p]/2
+            g_coeff[p, i,j] = (lambs[i] + lambs[j] - lambs[p])/2
+
+g = np.multiply(g_coeff, c)
+
+
+# for p in range(0, 2*I+1):
+#    for i in range(0, 2*I+1):
+#        for j in range(0, 2*I+1):
+#            g[p,i,j] = (lambs[i] + lambs[j] - lambs[p])*c[i,j,p]/2
          
 # print(g[6:8,12:14,:2])
 # %%
@@ -1006,7 +1040,7 @@ ax.set_xlim(-3,3)
 ax.set_ylim(-3,3)
 ax.set_zlim(-3,3)
 
-# ax.plot_surface(x_t, y_t, z_t, antialiased=True, alpha = 0.4, color='orange')
+ax.plot_surface(x_t, y_t, z_t, antialiased=True, alpha = 0.4, color='orange')
 ax.scatter3D(SOL_TRUE_X, SOL_TRUE_Y, SOL_TRUE_Z, s = 0.05, color = "red")
 
 
@@ -1017,7 +1051,7 @@ ax.set_xlim(-3,3)
 ax.set_ylim(-3,3)
 ax.set_zlim(-3,3)
 
-# ax.plot_surface(x_t, y_t, z_t, antialiased=True, alpha = 0.4, color='orange')
+ax.plot_surface(x_t, y_t, z_t, antialiased=True, alpha = 0.4, color='orange')
 ax.scatter3D(SOL_SEC_X, SOL_SEC_Y, SOL_SEC_Z, s = 0.05, color = "blue")
 
   
